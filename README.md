@@ -126,7 +126,7 @@ docker compose logs -f
 docker compose down
 ```
 
-打开 `http://localhost:8793`。Compose 会读取 `.env`，并将生成的 `data.js` 持久化到项目目录。容器启动后会立即刷新一次，此后每 6 小时自动更新。可通过 `APP_PORT=8080 docker compose up -d` 修改宿主机端口。
+打开 `http://localhost:8793`。Compose 会读取 `.env`，并使用 Docker 命名卷持久化生成的 `data.js`。容器启动后会立即刷新一次，此后每 6 小时自动更新。可通过 `APP_PORT=8080 docker compose up -d` 修改宿主机端口。
 
 ## 🌐 覆盖赛道与信息源
 

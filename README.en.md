@@ -125,7 +125,7 @@ docker compose logs -f
 docker compose down
 ```
 
-Open `http://localhost:8793`. Compose reads `.env` and persists generated `data.js` back to the project directory. The container refreshes once on startup and then every 6 hours. Use `APP_PORT=8080 docker compose up -d` to change the host port.
+Open `http://localhost:8793`. Compose reads `.env` and persists generated `data.js` in a Docker named volume. The container refreshes once on startup and then every 6 hours. Use `APP_PORT=8080 docker compose up -d` to change the host port.
 
 ## 🌐 Sectors & Sources
 

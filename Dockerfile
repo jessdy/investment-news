@@ -11,6 +11,7 @@ RUN groupadd --system app && \
 
 WORKDIR /app
 COPY --chown=app:app . .
+RUN mkdir -p /app/runtime && chown app:app /app/runtime
 
 USER app
 EXPOSE 8793

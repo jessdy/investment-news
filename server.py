@@ -6,13 +6,15 @@
 - POST /api/refresh 已禁用;GET /api/refresh-status 可查看后台任务状态。
 跑法: python3 server.py [port]   默认 8793
 """
-import os, sys, json, subprocess, threading
+import os, sys, json, shutil, subprocess, threading
 from datetime import datetime
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOST = os.environ.get("HOST", "127.0.0.1")
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", "8793"))
+DEFAULT_DATA_FILE = os.path.join(HERE, "data.js")
+DATA_FILE = os.path.abspath(os.environ.get("DATA_FILE", DEFAULT_DATA_FILE))
 REFRESH_INTERVAL = 6 * 60 * 60
 REFRESH_LOCK = threading.Lock()
 REFRESH_STATE = {
@@ -30,7 +32,16 @@ def child_env():
     # 保证子进程能找到 claude(订阅模式)
     extra = "/opt/homebrew/bin:/usr/local/bin:" + os.path.expanduser("~/.local/bin")
     env["PATH"] = extra + ":" + env.get("PATH", "")
+    env["DATA_FILE"] = DATA_FILE
     return env
+
+
+def ensure_data_file():
+    """命名卷首次挂载时，用镜像内置数据初始化运行时文件。"""
+    if DATA_FILE == DEFAULT_DATA_FILE or os.path.exists(DATA_FILE):
+        return
+    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
+    shutil.copyfile(DEFAULT_DATA_FILE, DATA_FILE)
 
 
 def run_refresh():
@@ -91,6 +102,19 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _data_js(self):
+        try:
+            with open(DATA_FILE, "rb") as f:
+                body = f.read()
+        except FileNotFoundError:
+            return self.send_error(404, "data.js 尚未生成")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/javascript; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_POST(self):
         if self.path.startswith("/api/refresh"):
             return self._json({"ok": False, "error": "已关闭手动刷新，系统每 6 小时自动更新"}, 405)
@@ -99,10 +123,13 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/api/refresh-status"):
             return self._json(dict(REFRESH_STATE, interval_hours=6))
+        if self.path.split("?", 1)[0] == "/data.js" and DATA_FILE != DEFAULT_DATA_FILE:
+            return self._data_js()
         return super().do_GET()
 
 
 if __name__ == "__main__":
+    ensure_data_file()
     display_host = "localhost" if HOST in ("0.0.0.0", "127.0.0.1") else HOST
     print("看板服务已启动: http://%s:%d/index.html   (Ctrl+C 停止)" % (display_host, PORT))
     print("数据刷新策略:启动后自动刷新,之后每 6 小时刷新一次(不支持手动刷新)")

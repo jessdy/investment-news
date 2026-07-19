@@ -11,6 +11,7 @@ from email.utils import parsedate_to_datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+DATA_FILE = os.path.abspath(os.environ.get("DATA_FILE", os.path.join(ROOT, "data.js")))
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 PER = 5
@@ -98,7 +99,8 @@ def main():
     data = {"generated_at": datetime.now(BEIJING).strftime("%Y-%m-%d %H:%M"),
             "recent_days":days, "industries":industries,
             "stats":{"industries":len(inds),"total_sources":len(cfg["sources"])}}
-    with open(os.path.join(ROOT,"data.js"),"w",encoding="utf-8") as f:
+    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
+    with open(DATA_FILE,"w",encoding="utf-8") as f:
         f.write("// data.js —— 各行业源真实数据(最近%d天,北京时间,新→旧)。fetch.py 抓取 → digest.py 补 AI 要点+翻译。\n"%days)
         f.write("window.DATA = " + json.dumps(data, ensure_ascii=False, indent=1) + ";\n")
     print("最近 %d 天 · 行业 | 源数 | 条数" % days)

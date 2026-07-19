@@ -10,6 +10,7 @@ import llm   # 统一大模型入口(订阅 claude-cli / API 二选一,见 ../.e
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+DATA_FILE = os.path.abspath(os.environ.get("DATA_FILE", os.path.join(ROOT, "data.js")))
 TOPN = 16            # 每行业取最新 N 条做要点+翻译
 WORKERS = 3
 ATTEMPTS = 3         # 单栏 LLM 失败重试上限(嵌套跑 claude -p 偶发失败,多试几次)
@@ -74,7 +75,7 @@ def main():
     global CFG
     CFG = llm.load_config(ROOT)
     print("大模型 provider:", CFG.get("provider", "claude-cli"))
-    p = os.path.join(ROOT, "data.js")
+    p = DATA_FILE
     txt = open(p, encoding="utf-8").read()
     data = json.loads(txt[txt.index("{"):txt.rindex("}")+1])
     inds = data["industries"]
