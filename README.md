@@ -109,6 +109,21 @@ LLM_MODEL="deepseek-chat"
 
 `.env` 已被 Git 忽略；`llm.config.json` 只保存环境变量映射，不再保存密钥。
 
+## 🐳 Docker 运行
+
+Docker 镜像使用 API 模式，通过本地 `.env` 注入配置；`.env` 不会被复制进镜像。
+
+```bash
+# 构建镜像（可选参数为标签，默认 latest）
+./scripts/docker-build.sh
+./scripts/docker-build.sh v1.0.0
+
+# 启动容器
+docker run --rm --env-file .env -p 8793:8793 investment-news:latest
+```
+
+打开 `http://localhost:8793`。容器启动后会立即刷新一次，此后每 6 小时自动更新。
+
 ## 🌐 覆盖赛道与信息源
 
 12 大赛道、108 个精选源，**英文权威媒体与中文垂直媒体并重**，例如：
@@ -136,6 +151,8 @@ LLM_MODEL="deepseek-chat"
 
 ```
 investment-news/
+├── Dockerfile          容器镜像定义
+├── .dockerignore       镜像构建忽略规则
 ├── index.html          浏览器看板(侧栏 12 赛道 + 今日要点 + 双语列表 + 刷新)
 ├── server.py           本地服务 + 每 6 小时后台自动刷新
 ├── sources.json        108 源 / 12 赛道 / 合规词(调整源即编辑此文件)
@@ -146,6 +163,7 @@ investment-news/
 │   ├── fetch.py        抓取 + 合规过滤 + 时间窗口(纯标准库)
 │   ├── digest.py       调用大模型生成「今日要点」与翻译
 │   ├── llm.py          统一大模型入口(claude-cli / api 双 provider)
+│   ├── docker-build.sh Docker 镜像一键构建脚本
 │   └── build_sources.py 重建并校验 sources.json(逐源 liveness 实测)
 └── docs/screenshot.png
 ```

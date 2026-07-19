@@ -11,7 +11,8 @@ from datetime import datetime
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8793
+HOST = os.environ.get("HOST", "127.0.0.1")
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", "8793"))
 REFRESH_INTERVAL = 6 * 60 * 60
 REFRESH_LOCK = threading.Lock()
 REFRESH_STATE = {
@@ -102,8 +103,9 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    print("看板服务已启动: http://localhost:%d/index.html   (Ctrl+C 停止)" % PORT)
+    display_host = "localhost" if HOST in ("0.0.0.0", "127.0.0.1") else HOST
+    print("看板服务已启动: http://%s:%d/index.html   (Ctrl+C 停止)" % (display_host, PORT))
     print("数据刷新策略:启动后自动刷新,之后每 6 小时刷新一次(不支持手动刷新)")
     threading.Thread(target=refresh_loop, name="auto-refresh", daemon=True).start()
-    # 只绑定回环地址，避免将本地看板暴露给局域网。
-    ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
+    # 本机默认只绑定回环地址；容器通过 HOST=0.0.0.0 显式开放监听。
+    ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()

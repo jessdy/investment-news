@@ -108,6 +108,21 @@ LLM_MODEL="deepseek-chat"
 
 `.env` is ignored by Git. `llm.config.json` contains environment-variable mappings only, never secrets.
 
+## 🐳 Docker
+
+The image uses API mode and receives configuration from the local `.env`; that file is never copied into the image.
+
+```bash
+# Build (optional argument is the image tag; default: latest)
+./scripts/docker-build.sh
+./scripts/docker-build.sh v1.0.0
+
+# Run
+docker run --rm --env-file .env -p 8793:8793 investment-news:latest
+```
+
+Open `http://localhost:8793`. The container refreshes once on startup and then every 6 hours.
+
 ## 🌐 Sectors & Sources
 
 12 sectors, 108 curated sources — **authoritative English media and Chinese vertical media in balance**, e.g.:
@@ -135,6 +150,8 @@ Add a line to the `sources` array in `sources.json` — no code changes:
 
 ```
 investment-news/
+├── Dockerfile          container image definition
+├── .dockerignore       Docker build exclusions
 ├── index.html          browser dashboard (sidebar 12 sectors + key points + bilingual list)
 ├── server.py           local server + automatic refresh every 6 hours
 ├── sources.json        108 sources / 12 sectors / compliance words
@@ -145,6 +162,7 @@ investment-news/
 │   ├── fetch.py        fetch + compliance filter + time window (stdlib)
 │   ├── digest.py       call your LLM for key points + translation
 │   ├── llm.py          unified LLM entry (claude-cli / api)
+│   ├── docker-build.sh one-command Docker image build
 │   └── build_sources.py rebuild & validate sources.json (liveness-tested)
 └── docs/screenshot.png
 ```
