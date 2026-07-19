@@ -17,8 +17,13 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! docker compose version >/dev/null 2>&1; then
+  echo "错误：未检测到 Docker Compose 插件。" >&2
+  exit 1
+fi
+
 echo "正在构建镜像 ${IMAGE_NAME}:${IMAGE_TAG}"
-docker build --pull --tag "${IMAGE_NAME}:${IMAGE_TAG}" .
+IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="$IMAGE_TAG" docker compose build --pull
 
 echo "镜像构建完成：${IMAGE_NAME}:${IMAGE_TAG}"
-echo "运行命令：docker run --rm --env-file .env -p 8793:8793 ${IMAGE_NAME}:${IMAGE_TAG}"
+echo "启动命令：IMAGE_NAME=${IMAGE_NAME} IMAGE_TAG=${IMAGE_TAG} docker compose up -d"

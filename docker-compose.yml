@@ -1,0 +1,16 @@
+services:
+  investment-news:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: "${IMAGE_NAME:-investment-news}:${IMAGE_TAG:-latest}"
+    env_file:
+      - .env
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8793"
+    ports:
+      - "${APP_PORT:-8793}:8793"
+    volumes:
+      - ./data.js:/app/data.js
+    restart: unless-stopped

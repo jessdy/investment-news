@@ -117,11 +117,15 @@ The image uses API mode and receives configuration from the local `.env`; that f
 ./scripts/docker-build.sh
 ./scripts/docker-build.sh v1.0.0
 
-# Run
-docker run --rm --env-file .env -p 8793:8793 investment-news:latest
+# Start
+docker compose up -d
+
+# Follow logs / stop
+docker compose logs -f
+docker compose down
 ```
 
-Open `http://localhost:8793`. The container refreshes once on startup and then every 6 hours.
+Open `http://localhost:8793`. Compose reads `.env` and persists generated `data.js` back to the project directory. The container refreshes once on startup and then every 6 hours. Use `APP_PORT=8080 docker compose up -d` to change the host port.
 
 ## 🌐 Sectors & Sources
 
@@ -151,6 +155,7 @@ Add a line to the `sources` array in `sources.json` — no code changes:
 ```
 investment-news/
 ├── Dockerfile          container image definition
+├── docker-compose.yml  container startup and runtime configuration
 ├── .dockerignore       Docker build exclusions
 ├── index.html          browser dashboard (sidebar 12 sectors + key points + bilingual list)
 ├── server.py           local server + automatic refresh every 6 hours

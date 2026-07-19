@@ -118,11 +118,15 @@ Docker 镜像使用 API 模式，通过本地 `.env` 注入配置；`.env` 不�
 ./scripts/docker-build.sh
 ./scripts/docker-build.sh v1.0.0
 
-# 启动容器
-docker run --rm --env-file .env -p 8793:8793 investment-news:latest
+# 启动服务
+docker compose up -d
+
+# 查看运行日志 / 停止服务
+docker compose logs -f
+docker compose down
 ```
 
-打开 `http://localhost:8793`。容器启动后会立即刷新一次，此后每 6 小时自动更新。
+打开 `http://localhost:8793`。Compose 会读取 `.env`，并将生成的 `data.js` 持久化到项目目录。容器启动后会立即刷新一次，此后每 6 小时自动更新。可通过 `APP_PORT=8080 docker compose up -d` 修改宿主机端口。
 
 ## 🌐 覆盖赛道与信息源
 
@@ -152,6 +156,7 @@ docker run --rm --env-file .env -p 8793:8793 investment-news:latest
 ```
 investment-news/
 ├── Dockerfile          容器镜像定义
+├── docker-compose.yml  容器启动与运行配置
 ├── .dockerignore       镜像构建忽略规则
 ├── index.html          浏览器看板(侧栏 12 赛道 + 今日要点 + 双语列表 + 刷新)
 ├── server.py           本地服务 + 每 6 小时后台自动刷新
