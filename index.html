@@ -77,6 +77,14 @@
   .sector-item .cnt{font-size:10px;min-width:24px;padding:2px 5px;text-align:center;border-radius:10px;
     background:#dfe5ea;color:var(--text-3);font-variant-numeric:tabular-nums}
   .sector-item.active{background:#fff;color:var(--navy);font-weight:600;border-color:var(--line);box-shadow:0 2px 8px rgba(16,38,57,.04)}
+  .side-follow{margin:0 12px 12px;padding:10px;background:#fff;border:1px solid var(--line);border-radius:9px;
+    display:grid;grid-template-columns:58px minmax(0,1fr);gap:10px;align-items:center;box-shadow:0 3px 12px rgba(17,38,58,.05)}
+  .side-follow img{width:58px;height:58px;display:block;border-radius:5px;border:1px solid #edf0f2}
+  .side-follow-copy{min-width:0;line-height:1.35}
+  .side-follow-copy span{display:block;font-size:9px;color:var(--gold);font-weight:700;letter-spacing:.08em}
+  .side-follow-copy strong{display:block;font-family:"STSong","Songti SC",serif;color:var(--navy);font-size:15px;
+    margin:3px 0 2px;white-space:nowrap}
+  .side-follow-copy small{display:block;color:var(--text-3);font-size:9px;line-height:1.45}
   .side-foot{border-top:1px solid var(--line-strong);padding:14px 20px;color:var(--text-3);font-size:10px;line-height:1.7}
   .source-stat{color:var(--navy);font-weight:700;font-size:12px}
 
@@ -228,7 +236,7 @@
     .topnav{order:3;width:100%;height:42px;margin:5px 0 0}.topnav button{flex:1;min-width:0}
     .workspace{height:calc(100vh - 104px);height:calc(100dvh - 104px);flex-direction:column}
     .sidebar{width:100%;height:50px;flex:none;border-right:0;border-bottom:1px solid var(--line-strong)}
-    .side-intro,.side-rule,.side-foot,.sector-item .cnt{display:none}
+    .side-intro,.side-rule,.side-follow,.side-foot,.sector-item .cnt{display:none}
     .sector-nav{display:flex;align-items:center;gap:6px;padding:7px 10px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
     .sector-nav::-webkit-scrollbar{display:none}.sector-item{flex:0 0 auto;justify-content:center;padding:7px 10px;margin:0;background:rgba(255,255,255,.45)}
     .sector-item .nm{display:block;font-size:12px;max-width:none}.sector-item .bar{width:3px;height:15px}
@@ -245,6 +253,7 @@
     .article-date,.article-cover{width:58px;height:58px}.article-title{font-size:15px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .article-summary{display:none}.article-meta{margin-bottom:4px}.qr-placeholder{width:130px;height:130px}
   }
+  @media(max-height:680px) and (min-width:651px){.side-follow{display:none}}
   @media(min-width:1801px){body{background:#e9edf1}.workspace{border-left:1px solid var(--line-strong);border-right:1px solid var(--line-strong)}}
 </style>
 </head>
@@ -270,6 +279,10 @@
     <div class="side-intro"><div class="eyebrow">Sector Monitor</div><h2>产业观察</h2><p>追踪全球产业链领先信号</p></div>
     <div class="side-rule"></div>
     <div class="sector-nav" id="sectorNav"></div>
+    <div class="side-follow" title="微信扫一扫，关注生财佑道">
+      <img src="docs/shengcai-youdao-qr.jpg" alt="生财佑道公众号二维码">
+      <div class="side-follow-copy"><span>微信公众号</span><strong>生财佑道</strong><small>微信扫码关注<br>获取产业深度内容</small></div>
+    </div>
     <div class="side-foot" id="sideFoot"></div>
   </aside>
   <main class="main" id="main"><div class="empty">正在载入产业数据…</div></main>
