@@ -87,19 +87,27 @@ sources.json  (108 个源 / 12 赛道)
 
 ## 🤖 配置大模型（订阅 / API 二选一）
 
-编辑 `llm.config.json`：
+复制环境变量模板并编辑 `.env`：
 
 | provider | 说明 | 成本 |
 |---|---|---|
 | **`claude-cli`（默认）** | 使用本机已登录的 **Claude Code 订阅**（仅需 `claude login` 一次），本地可用 | **$0** |
 | **`api`** | 任意 **OpenAI 兼容 API**（DeepSeek / OpenAI / 硅基流动 / OpenRouter…），任意环境可用 | 按量计费 |
 
-```jsonc
-{ "provider": "claude-cli" }                       // 使用订阅，无需额外配置
-// 或
-{ "provider": "api",
-  "api": { "base_url": "https://api.deepseek.com", "api_key": "sk-...", "model": "deepseek-chat" } }
+```bash
+cp .env.example .env
+
+# 使用本机 Claude 订阅
+LLM_PROVIDER="claude-cli"
+
+# 或使用 OpenAI 兼容 API
+LLM_PROVIDER="api"
+LLM_BASE_URL="https://api.deepseek.com"
+LLM_API_KEY="sk-..."
+LLM_MODEL="deepseek-chat"
 ```
+
+`.env` 已被 Git 忽略；`llm.config.json` 只保存环境变量映射，不再保存密钥。
 
 ## 🌐 覆盖赛道与信息源
 
@@ -131,7 +139,8 @@ investment-news/
 ├── index.html          浏览器看板(侧栏 12 赛道 + 今日要点 + 双语列表 + 刷新)
 ├── server.py           本地服务 + 每 6 小时后台自动刷新
 ├── sources.json        108 源 / 12 赛道 / 合规词(调整源即编辑此文件)
-├── llm.config.json     大模型 provider(订阅 / API)
+├── .env                本地大模型配置与密钥(Git 忽略)
+├── llm.config.json     环境变量映射(不含密钥)
 ├── data.js             生成的数据(fetch + digest 产出)
 ├── scripts/
 │   ├── fetch.py        抓取 + 合规过滤 + 时间窗口(纯标准库)

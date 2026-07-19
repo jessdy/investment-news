@@ -86,19 +86,27 @@ The entire pipeline is **pure Python stdlib + one LLM** — no database, no RSSH
 
 ## 🤖 Configure your LLM (subscription / API)
 
-Edit `llm.config.json`:
+Copy the environment template and edit `.env`:
 
 | provider | Description | Cost |
 |---|---|---|
 | **`claude-cli` (default)** | Uses your logged-in **Claude Code subscription** (`claude login` once), local-only | **$0** |
 | **`api`** | Any **OpenAI-compatible API** (DeepSeek / OpenAI / SiliconFlow / OpenRouter…), runs anywhere | usage-based |
 
-```jsonc
-{ "provider": "claude-cli" }                       // subscription — nothing else to fill
-// or
-{ "provider": "api",
-  "api": { "base_url": "https://api.deepseek.com", "api_key": "sk-...", "model": "deepseek-chat" } }
+```bash
+cp .env.example .env
+
+# Local Claude subscription
+LLM_PROVIDER="claude-cli"
+
+# Or an OpenAI-compatible API
+LLM_PROVIDER="api"
+LLM_BASE_URL="https://api.deepseek.com"
+LLM_API_KEY="sk-..."
+LLM_MODEL="deepseek-chat"
 ```
+
+`.env` is ignored by Git. `llm.config.json` contains environment-variable mappings only, never secrets.
 
 ## 🌐 Sectors & Sources
 
@@ -130,7 +138,8 @@ investment-news/
 ├── index.html          browser dashboard (sidebar 12 sectors + key points + bilingual list)
 ├── server.py           local server + automatic refresh every 6 hours
 ├── sources.json        108 sources / 12 sectors / compliance words
-├── llm.config.json     LLM provider (subscription / API)
+├── .env                local LLM config and secret (Git-ignored)
+├── llm.config.json     environment-variable mapping (no secrets)
 ├── data.js             generated data (fetch + digest output)
 ├── scripts/
 │   ├── fetch.py        fetch + compliance filter + time window (stdlib)

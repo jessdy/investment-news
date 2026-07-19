@@ -7,11 +7,10 @@
   2) api (OpenAI 兼容)：用 API key 调 /chat/completions。任意机器可用,按量付费。
      支持 DeepSeek / OpenAI / 硅基流动 / OpenRouter 等一切 OpenAI 兼容端点。
 
-provider 由 ../llm.config.json 决定(没有就默认 claude-cli)。
-**客户的 Agent**:看到 llm.config.json 就知道有这两个选项,应当问使用者要用「订阅」还是「API」。
+provider 与 API 参数由 ../.env 提供，../llm.config.json 只保存变量映射。
 纯标准库(api 模式用 urllib;cli 模式用 subprocess)。
 """
-import os, json, shutil, subprocess, tempfile, urllib.request
+import os, json, re, shutil, subprocess, tempfile, urllib.request
 
 # claude 禁用全部工具:只让它处理我们给的文本,不读文件/不联网/不起子任务
 _DISALLOW = ["Read","Write","Edit","Bash","Glob","Grep","WebFetch","WebSearch","TodoWrite","Task","NotebookEdit"]
@@ -30,11 +29,53 @@ def find_claude():
     return None
 
 
+def _load_dotenv(root):
+    """加载项目根目录 .env；系统环境变量优先，不会被文件覆盖。"""
+    p = os.path.join(root, ".env")
+    if not os.path.exists(p):
+        return
+    with open(p, encoding="utf-8") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("export "):
+                line = line[7:].strip()
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key, value = key.strip(), value.strip()
+            if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key):
+                continue
+            if len(value) >= 2 and value[0] == value[-1] == '"':
+                try:
+                    value = json.loads(value)
+                except Exception:
+                    value = value[1:-1]
+            elif len(value) >= 2 and value[0] == value[-1] == "'":
+                value = value[1:-1]
+            os.environ.setdefault(key, value)
+
+
+def _expand_env(value):
+    if isinstance(value, dict):
+        return {k: _expand_env(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_expand_env(v) for v in value]
+    if isinstance(value, str):
+        return re.sub(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}",
+                      lambda m: os.environ.get(m.group(1), ""), value)
+    return value
+
+
 def load_config(root):
+    _load_dotenv(root)
     p = os.path.join(root, "llm.config.json")
     if os.path.exists(p):
         try:
-            return json.load(open(p, encoding="utf-8"))
+            cfg = _expand_env(json.load(open(p, encoding="utf-8")))
+            cfg["provider"] = cfg.get("provider") or "claude-cli"
+            return cfg
         except Exception:
             pass
     return {"provider": "claude-cli"}
@@ -44,7 +85,7 @@ def _call_cli(system, user, timeout):
     binp = find_claude()
     if not binp:
         raise RuntimeError("未检测到 claude CLI。订阅模式需本机装好 Claude Code 并 `claude login`,"
-                           "或在 llm.config.json 改用 api 模式。")
+                           "或在项目 .env 中将 LLM_PROVIDER 改为 api。")
     with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as f:
         f.write(system); sysf = f.name
     try:
@@ -60,9 +101,9 @@ def _call_cli(system, user, timeout):
 def _call_api(system, user, cfg, timeout):
     api = cfg.get("api", cfg)
     base = (api.get("base_url") or "https://api.deepseek.com").rstrip("/")
-    key = api.get("api_key") or os.environ.get(api.get("api_key_env", "LLM_API_KEY"), "")
+    key = api.get("api_key") or os.environ.get("LLM_API_KEY", "")
     if not key:
-        raise RuntimeError("API 模式需在 llm.config.json 的 api.api_key 填 key,或设对应环境变量。")
+        raise RuntimeError("API 模式需在项目 .env 中配置 LLM_API_KEY。")
     model = api.get("model", "deepseek-chat")
     body = json.dumps({"model": model, "temperature": 0.3, "stream": False,
                        "messages": [{"role": "system", "content": system},

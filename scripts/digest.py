@@ -6,7 +6,7 @@
 """
 import json, os, re
 from concurrent.futures import ThreadPoolExecutor
-import llm   # 统一大模型入口(订阅 claude-cli / API 二选一,见 ../llm.config.json)
+import llm   # 统一大模型入口(订阅 claude-cli / API 二选一,见 ../.env)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -20,7 +20,7 @@ SYS = ("你是中文行业新闻分析助手。给你某行业最近的新闻列
        "只输出 JSON,不要任何解释或代码块标记。格式:\n"
        '{"points":[{"t":"要点1","refs":[0,3]},{"t":"要点2","refs":[5]}],"items":[{"i":0,"zh":"中文标题"}]}')
 
-CFG = {"provider": "claude-cli"}   # main 里按 llm.config.json 覆盖
+CFG = {"provider": "claude-cli"}   # main 里按 .env + llm.config.json 映射覆盖
 
 def _llm(user, label=""):
     try:
