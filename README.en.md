@@ -40,7 +40,7 @@ When it helps:
 | **Bilingual** | English titles auto-translated to Chinese; Chinese-first with the original kept for reference |
 | **Sectors** | AI · Semiconductors · Robotics · EV/Auto · Energy · Biotech/Health · Space · Cybersecurity · Tech · Consumer Electronics · Finance/Macro · Science |
 | **Sourced** | Every key point links to the original article it's primarily based on |
-| **Refresh** | One click in the dashboard triggers fetch + AI; it auto-refreshes on completion — no command line |
+| **Auto refresh** | The service refreshes on startup, then fetches and summarizes in the background every 6 hours |
 | **Provider** | Local Claude subscription (`claude-cli`, $0) or any OpenAI-compatible API, switched by a single config field |
 | **Local** | Fetching and rendering both run locally; data never leaves your machine — no database, no hosting, no RSSHub |
 | **Filter** | Built-in keyword filtering removes gambling / prediction markets / crypto / adult content; politics and finance are kept |
@@ -64,7 +64,7 @@ cd investment-news
 python3 server.py            # default port 8793, keep it running
 # 3) Open the dashboard in a browser
 open http://localhost:8793   # Windows: start, Linux: xdg-open
-# 4) Click ⟳ (top-left) to trigger fetch + AI summary; it auto-refreshes on completion
+# 4) The service refreshes once on startup, then automatically every 6 hours
 ```
 
 ## ⚙️ How It Works
@@ -79,7 +79,7 @@ sources.json  (108 sources / 12 sectors)
   data.js  (with AI key points)
        │
        ▼  index.html          browser dashboard (single file, no build, no deps)
-  server.py: local server + /api/refresh for the refresh button
+  server.py: local server + automatic refresh every 6 hours
 ```
 
 The entire pipeline is **pure Python stdlib + one LLM** — no database, no RSSHub, no hosting. In `claude-cli` mode, `digest` invokes the local `claude -p` (subscription auth, all tools disabled, text-only) — **local-only, $0**.
@@ -127,8 +127,8 @@ Add a line to the `sources` array in `sources.json` — no code changes:
 
 ```
 investment-news/
-├── index.html          browser dashboard (sidebar 12 sectors + key points + bilingual list + refresh)
-├── server.py           local server + /api/refresh
+├── index.html          browser dashboard (sidebar 12 sectors + key points + bilingual list)
+├── server.py           local server + automatic refresh every 6 hours
 ├── sources.json        108 sources / 12 sectors / compliance words
 ├── llm.config.json     LLM provider (subscription / API)
 ├── data.js             generated data (fetch + digest output)

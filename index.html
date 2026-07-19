@@ -1,243 +1,355 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="dark">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>投资资讯 · Investment News</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<meta name="description" content="生财佑道产业资讯——聚合全球产业信号，辅助产业研究与趋势判断。">
+<title>生财佑道产业资讯</title>
 <style>
   :root{
-    --background:220 20% 5%; --foreground:220 10% 92%;
-    --card:220 20% 8%; --muted:220 20% 13%; --muted-foreground:220 10% 55%;
-    --border:220 20% 18%; --primary:27 90% 52%; --radius:.5rem;
+    --navy:#0b1f33; --navy-2:#132d46; --navy-3:#1b3b58;
+    --gold:#bb8b3d; --gold-soft:#f6efe3; --red:#b5473c;
+    --bg:#f4f6f8; --surface:#ffffff; --surface-2:#f8fafb;
+    --text:#172637; --text-2:#526172; --text-3:#7c8997;
+    --line:#dde3e8; --line-strong:#cdd5dc; --shadow:0 8px 30px rgba(17,38,58,.08);
+    --radius:10px;
   }
-  *{box-sizing:border-box; margin:0; padding:0; border-color:hsl(var(--border));}
-  html,body{height:100%;}
-  body{font-family:'Inter',system-ui,sans-serif; background:hsl(var(--background));
-    color:hsl(var(--foreground)); -webkit-font-smoothing:antialiased; font-size:14px;}
-  .mono{font-family:'JetBrains Mono',ui-monospace,monospace;}
-  ::-webkit-scrollbar{width:7px;height:7px;}
-  ::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:6px;}
-  ::-webkit-scrollbar-thumb:hover{background:hsl(var(--muted-foreground));}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;
+    color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;font-size:14px}
+  button,input{font:inherit}
+  button{color:inherit}
+  a{color:inherit}
+  ::-webkit-scrollbar{width:7px;height:7px}
+  ::-webkit-scrollbar-thumb{background:#bdc7d0;border-radius:8px}
 
-  .app{display:flex; height:100vh; overflow:hidden;}
+  /* 顶部品牌与主导航 */
+  .topbar{height:68px;background:var(--navy);color:#fff;display:flex;align-items:center;
+    padding:0 28px;position:relative;z-index:30;box-shadow:0 2px 12px rgba(4,17,29,.2)}
+  .identity{display:flex;align-items:center;gap:12px;min-width:310px}
+  .brand-mark{width:36px;height:36px;border:1px solid rgba(255,255,255,.28);border-radius:8px;
+    display:grid;place-items:center;position:relative;background:linear-gradient(145deg,#173c5d,#0b1f33)}
+  .brand-mark:before{content:"财";font-family:serif;font-size:19px;font-weight:700;color:#e4bf76}
+  .brand-mark:after{content:"";position:absolute;bottom:5px;width:16px;height:1px;background:#e4bf76}
+  .brand-name{font-family:"STSong","Songti SC",serif;font-size:20px;font-weight:700;letter-spacing:.08em}
+  .brand-tagline{font-size:10px;color:rgba(255,255,255,.52);letter-spacing:.18em;margin-top:2px}
+  .topnav{height:100%;display:flex;align-items:center;gap:4px}
+  .topnav button{height:100%;min-width:108px;border:0;background:transparent;color:rgba(255,255,255,.68);
+    cursor:pointer;position:relative;font-weight:500;letter-spacing:.04em;transition:.18s}
+  .topnav button:hover{color:#fff;background:rgba(255,255,255,.04)}
+  .topnav button.active{color:#fff;font-weight:600}
+  .topnav button.active:after{content:"";position:absolute;left:22px;right:22px;bottom:0;height:3px;background:#d4a454}
+  .top-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .update-state{font-size:11px;color:rgba(255,255,255,.48);margin-right:8px;white-space:nowrap}
+  .auto-refresh{height:30px;padding:0 10px;border:1px solid rgba(255,255,255,.13);border-radius:6px;
+    display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.62);font-size:10px;background:rgba(255,255,255,.04)}
+  .auto-refresh:before{content:"";width:6px;height:6px;border-radius:50%;background:#52b788;box-shadow:0 0 0 3px rgba(82,183,136,.12)}
+  .icon-btn,.login-btn{height:34px;border-radius:7px;border:1px solid rgba(255,255,255,.18);
+    background:rgba(255,255,255,.05);color:rgba(255,255,255,.82);cursor:pointer;transition:.15s}
+  .icon-btn{width:36px;font-size:17px}
+  .icon-btn:hover,.login-btn:hover{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.32)}
+  .icon-btn.spin{pointer-events:none;color:#e4bf76}
+  .icon-btn.spin span{display:inline-block;animation:spin .9s linear infinite}
+  .login-btn{padding:0 15px;display:flex;align-items:center;gap:7px}
+  .avatar-dot{width:18px;height:18px;border-radius:50%;background:#d4a454;color:var(--navy);font-size:11px;
+    display:grid;place-items:center;font-weight:700}
+  @keyframes spin{to{transform:rotate(360deg)}}
 
-  /* ---- 侧边栏 ---- */
-  .sidebar{width:264px; flex-shrink:0; background:hsl(var(--card));
-    border-right:1px solid hsl(var(--border)); display:flex; flex-direction:column;}
-  .brand{display:flex; align-items:center; gap:9px; padding:16px;
-    border-bottom:1px solid hsl(var(--border)); font-weight:700; font-size:15px; letter-spacing:-.01em;}
-  .brand .logo{width:22px; height:22px; border-radius:6px;
-    background:hsl(var(--primary)); display:grid; place-items:center; color:#fff; font-size:13px; font-weight:800;}
-  .brand small{color:hsl(var(--muted-foreground)); font-weight:500; font-size:11px;}
-  .refresh{margin-left:auto; width:30px; height:30px; flex-shrink:0; border-radius:8px; padding:0;
-    border:1px solid hsl(var(--border)); background:transparent; color:hsl(var(--muted-foreground));
-    cursor:pointer; display:grid; place-items:center; transition:all .14s;}
-  .refresh:hover{color:hsl(var(--primary)); border-color:hsl(var(--primary)/.45); background:hsl(var(--primary)/.10);}
-  .refresh .ri{font-size:17px; line-height:1; display:block;}
-  .refresh.spin{color:hsl(var(--primary)); border-color:hsl(var(--primary)/.45); pointer-events:none;}
-  .refresh.spin .ri{animation:spin .9s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  /* ---- 右上角 GitHub ---- */
-  .gh{position:fixed; top:14px; right:18px; z-index:50; width:34px; height:34px; border-radius:9px;
-    display:grid; place-items:center; color:hsl(var(--muted-foreground));
-    border:1px solid hsl(var(--border)); background:hsl(var(--card)/.65); backdrop-filter:blur(6px);
-    transition:all .14s;}
-  .gh:hover{color:hsl(var(--foreground)); border-color:hsl(var(--primary)/.5); background:hsl(var(--primary)/.12);}
-  .nav{flex:1; overflow:auto; padding:8px;}
-  .nav-label{font-size:10px; letter-spacing:.14em; text-transform:uppercase;
-    color:hsl(var(--muted-foreground)); padding:10px 12px 6px;}
-  .nav-item{display:flex; align-items:center; gap:11px; padding:8px 12px; border-radius:7px;
-    cursor:pointer; color:hsl(var(--muted-foreground)); transition:all .12s; user-select:none;}
-  .nav-item:hover{background:hsl(var(--muted)); color:hsl(var(--foreground));}
-  .nav-item .dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
-  .nav-item .nm{flex:1; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .nav-item .cnt{font-size:11px; color:hsl(var(--muted-foreground));}
-  .nav-item.active{font-weight:600;} /* 颜色由 JS 按行业色注入 */
-  .foot{border-top:1px solid hsl(var(--border)); padding:12px 16px;
-    font-size:11px; color:hsl(var(--muted-foreground)); line-height:1.6;}
+  .workspace{height:calc(100vh - 68px);display:flex;overflow:hidden}
 
-  /* ---- 主区 ---- */
-  .main{flex:1; overflow:auto;}
-  .head{padding:26px 34px 18px; border-bottom:1px solid hsl(var(--border)); position:sticky; top:0;
-    background:hsl(var(--background)/.85); backdrop-filter:blur(8px); z-index:5;}
-  .head .ttl{display:flex; align-items:center; gap:12px;}
-  .head .bdg{width:30px; height:30px; border-radius:9px; display:grid; place-items:center; font-size:15px;}
-  .head h1{font-size:24px; font-weight:700; letter-spacing:-.02em;}
-  .head .sub{margin-top:7px; font-size:12.5px; color:hsl(var(--muted-foreground));}
-  .head .sub b{color:hsl(var(--foreground));}
-  .head .sub .pill{display:inline-block; padding:1px 8px; border-radius:999px; margin-left:6px;
-    font-size:11px; font-family:'JetBrains Mono',monospace;}
+  /* 行业侧栏 */
+  .sidebar{width:252px;flex-shrink:0;background:#eef2f5;border-right:1px solid var(--line-strong);
+    display:flex;flex-direction:column}
+  .side-intro{padding:22px 20px 15px}
+  .eyebrow{font-size:10px;color:var(--gold);font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+  .side-intro h2{font-family:"STSong","Songti SC",serif;font-size:18px;margin-top:7px;letter-spacing:.04em}
+  .side-intro p{font-size:11px;color:var(--text-3);margin-top:5px;line-height:1.55}
+  .side-rule{height:1px;background:var(--line);margin:0 20px 7px}
+  .sector-nav{flex:1;overflow:auto;padding:5px 10px 12px}
+  .sector-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;cursor:pointer;
+    color:var(--text-2);transition:.14s;user-select:none;margin:1px 0;border:1px solid transparent}
+  .sector-item:hover{background:rgba(255,255,255,.78);color:var(--text)}
+  .sector-item .bar{width:3px;height:18px;border-radius:3px;opacity:.8}
+  .sector-item .nm{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sector-item .cnt{font-size:10px;min-width:24px;padding:2px 5px;text-align:center;border-radius:10px;
+    background:#dfe5ea;color:var(--text-3);font-variant-numeric:tabular-nums}
+  .sector-item.active{background:#fff;color:var(--navy);font-weight:600;border-color:var(--line);box-shadow:0 2px 8px rgba(16,38,57,.04)}
+  .side-foot{border-top:1px solid var(--line-strong);padding:14px 20px;color:var(--text-3);font-size:10px;line-height:1.7}
+  .source-stat{color:var(--navy);font-weight:700;font-size:12px}
 
-  /* ---- 长条列表(一行一条) ---- */
-  .list{padding:16px 30px 60px; display:flex; flex-direction:column; gap:6px; max-width:1280px;}
-  .row{display:flex; align-items:center; gap:14px; padding:11px 16px; border:1px solid hsl(var(--border));
-    border-radius:10px; background:hsl(var(--card)); transition:border-color .14s, background .14s;}
-  .row:hover{background:hsl(var(--muted)/.30);}
-  .row .rdot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
-  .row .rbody{flex:1; min-width:0;}
-  .row .rt{font-weight:600; font-size:14.5px; line-height:1.4; letter-spacing:-.005em;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .row a.rt{color:inherit; text-decoration:none; display:block;}
-  .row a.rt:hover{color:hsl(var(--primary));}
-  .row .rs{margin-top:2px; font-size:12px; line-height:1.4; color:hsl(var(--muted-foreground));
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .row .rmeta{flex-shrink:0; display:flex; align-items:center; gap:12px;}
-  .row .rsrc{font-family:'JetBrains Mono',monospace; font-size:11px; padding:2px 9px; border-radius:6px;
-    font-weight:500; white-space:nowrap; max-width:160px; overflow:hidden; text-overflow:ellipsis;}
-  .row .rtm{font-family:'JetBrains Mono',monospace; font-size:12px; color:hsl(var(--muted-foreground));
-    white-space:nowrap; min-width:84px; text-align:right; font-variant-numeric:tabular-nums;}
-  .empty{padding:50px 34px; color:hsl(var(--muted-foreground)); font-size:13px;}
-  /* ---- AI 今日要点卡 ---- */
-  .digest{margin:18px 30px 2px; max-width:1280px; border:1px solid; border-radius:14px; padding:16px 20px 15px;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.04);}
-  .digest .dh{font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; letter-spacing:.06em;
-    margin-bottom:12px; display:flex; align-items:center; gap:7px;}
-  .digest .dh .dn{color:hsl(var(--muted-foreground)); font-weight:400; letter-spacing:0;}
-  .digest ul{list-style:none; display:flex; flex-direction:column; gap:9px;}
-  .digest li{display:flex; align-items:flex-start; gap:11px; font-size:14.5px; line-height:1.5; color:hsl(var(--foreground));}
-  .digest li .b{width:6px; height:6px; border-radius:50%; margin-top:7px; flex-shrink:0;}
-  .digest li .pt{flex:1; min-width:0;}
-  .digest li .dj{flex-shrink:0; text-decoration:none; font-size:14px; font-weight:700; opacity:.4;
-    margin-top:0; padding:0 2px; transition:opacity .12s, transform .12s; line-height:1.5;}
-  .digest li:hover .dj{opacity:.85;}
-  .digest li .dj:hover{opacity:1; transform:translate(1px,-1px);}
-  .row .ren{margin-top:3px; font-size:11.5px; line-height:1.35; color:hsl(var(--muted-foreground));
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.8;}
+  /* 内容区 */
+  .main{flex:1;overflow:auto;min-width:0}
+  .page-head{padding:25px 32px 20px;background:var(--surface);border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:10}
+  .breadcrumb{font-size:11px;color:var(--text-3);display:flex;gap:7px;align-items:center;margin-bottom:12px}
+  .breadcrumb b{color:var(--gold);font-weight:600}
+  .title-line{display:flex;align-items:flex-end;gap:14px}
+  .title-line h1{font-family:"STSong","Songti SC",serif;font-size:26px;line-height:1.2;letter-spacing:.03em;color:var(--navy)}
+  .status-chip{font-size:10px;border-radius:4px;padding:4px 7px;font-weight:600;margin-bottom:2px}
+  .head-sub{margin-top:9px;color:var(--text-3);font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .head-sub strong{color:var(--text-2)}
+  .sep{width:1px;height:11px;background:var(--line-strong)}
+  .content{padding:20px 30px 60px;max-width:1440px}
+
+  /* 研判摘要 */
+  .digest{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);margin-bottom:18px;
+    box-shadow:0 3px 14px rgba(20,42,61,.04);overflow:hidden}
+  .digest-head{height:45px;padding:0 17px;display:flex;align-items:center;border-bottom:1px solid var(--line);background:var(--surface-2)}
+  .digest-head .symbol{width:22px;height:22px;display:grid;place-items:center;border-radius:4px;margin-right:9px;font-size:11px}
+  .digest-head h3{font-size:13px;color:var(--navy);letter-spacing:.04em}
+  .digest-head span:last-child{margin-left:auto;font-size:10px;color:var(--text-3)}
+  .digest-list{list-style:none;padding:11px 17px 13px}
+  .digest-list li{display:flex;align-items:flex-start;gap:11px;padding:8px 0;border-bottom:1px dashed #e7ebef;
+    line-height:1.55;font-size:13.5px}
+  .digest-list li:last-child{border-bottom:0}
+  .digest-list .index{width:20px;flex-shrink:0;color:var(--text-3);font-family:Georgia,serif;font-style:italic}
+  .digest-list .point{flex:1}
+  .digest-list a{text-decoration:none;color:var(--text-3);font-size:12px;transition:.12s}
+  .digest-list a:hover{color:var(--gold)}
+
+  /* 资讯列表 */
+  .section-bar{display:flex;align-items:center;margin:3px 0 10px}
+  .section-bar h3{font-size:14px;color:var(--navy)}
+  .section-bar p{font-size:11px;color:var(--text-3);margin-left:9px}
+  .section-bar .legend{margin-left:auto;font-size:10px;color:var(--text-3)}
+  .news-list{display:flex;flex-direction:column;gap:7px}
+  .news-row{display:grid;grid-template-columns:5px minmax(0,1fr) 150px 84px;gap:15px;align-items:center;
+    min-height:70px;padding:11px 16px;background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    transition:border-color .15s,box-shadow .15s,transform .15s}
+  .news-row:hover{border-color:#b9c5cf;box-shadow:0 5px 18px rgba(19,42,61,.06);transform:translateY(-1px)}
+  .signal{height:32px;border-radius:3px}
+  .news-body{min-width:0}
+  .news-title{display:block;color:var(--text);font-weight:600;font-size:14px;line-height:1.45;text-decoration:none;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  a.news-title:hover{color:var(--red)}
+  .news-en{font-size:11px;color:var(--text-3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .source{justify-self:start;max-width:145px;font-size:10px;padding:4px 8px;border-radius:4px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .time{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--text-3);text-align:right;white-space:nowrap}
+  .empty{padding:70px 30px;color:var(--text-3);text-align:center}
+
+  /* 公众号文章中心 */
+  .analysis-wrap{padding:26px 30px 60px;max-width:1380px}
+  .analysis-hero{background:linear-gradient(125deg,var(--navy),var(--navy-2));color:#fff;padding:28px 30px;border-radius:12px;
+    display:flex;justify-content:space-between;align-items:flex-end;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .analysis-hero:after{content:"道";position:absolute;right:34px;top:-34px;font-family:"STSong","Songti SC",serif;
+    font-size:150px;color:rgba(255,255,255,.035);line-height:1}
+  .analysis-hero .eyebrow{color:#d9b36d}
+  .analysis-hero h1{font-family:"STSong","Songti SC",serif;font-size:28px;margin:7px 0 9px;position:relative;z-index:1}
+  .analysis-hero p{color:rgba(255,255,255,.62);font-size:12px;position:relative;z-index:1}
+  .analysis-brand{text-align:right;color:rgba(255,255,255,.52);font-size:10px;line-height:1.8;position:relative;z-index:1}
+  .analysis-brand b{display:block;color:#e1bc72;font-family:"STSong","Songti SC",serif;font-size:19px;letter-spacing:.08em}
+  .article-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;margin-top:18px;align-items:start}
+  .article-panel{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .article-panel-head{padding:17px 19px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+  .article-panel-head h3{font-size:14px;color:var(--navy)}
+  .article-panel-head span{margin-left:8px;color:var(--text-3);font-size:10px}
+  .article-panel-head em{margin-left:auto;color:var(--text-3);font-size:10px;font-style:normal}
+  .article-list{padding:4px 18px}
+  .article-card{display:grid;grid-template-columns:52px minmax(0,1fr) 20px;gap:14px;align-items:center;
+    padding:18px 1px;border-bottom:1px solid #e9edf0;text-decoration:none;transition:.15s}
+  .article-card:last-child{border-bottom:0}
+  .article-card:hover{padding-left:7px;padding-right:7px;background:#faf8f3}
+  .article-date{width:52px;height:52px;border:1px solid var(--line);border-radius:7px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;background:var(--surface-2);color:var(--text-3)}
+  .article-date b{font-family:Georgia,serif;font-size:19px;color:var(--navy);line-height:1}
+  .article-date span{font-size:9px;margin-top:5px;text-transform:uppercase}
+  .article-cover{width:52px;height:52px;border-radius:7px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line)}
+  .article-cover img{width:100%;height:100%;object-fit:cover;display:block}
+  .article-main{min-width:0}
+  .article-meta{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:10px;color:var(--text-3)}
+  .article-category{padding:2px 6px;background:var(--gold-soft);color:#8b652a;border-radius:3px;font-weight:600}
+  .article-title{font-family:"STSong","Songti SC",serif;font-size:17px;font-weight:700;color:var(--navy);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+  .article-summary{font-size:11px;color:var(--text-3);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .article-arrow{font-size:17px;color:#adb7c0;transition:.15s}
+  .article-card:hover .article-arrow{color:var(--gold);transform:translateX(2px)}
+  .article-empty{padding:65px 25px;text-align:center}
+  .article-empty .empty-mark{width:48px;height:48px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;
+    background:var(--gold-soft);color:var(--gold);font-family:"STSong","Songti SC",serif;font-size:21px}
+  .article-empty h3{font-size:15px;color:var(--navy);margin-bottom:7px}
+  .article-empty p{font-size:11px;color:var(--text-3);line-height:1.65}
+  .follow-card{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;position:sticky;top:20px}
+  .follow-cover{background:var(--navy);color:#fff;padding:23px;text-align:center}
+  .follow-logo{width:58px;height:58px;border:1px solid rgba(255,255,255,.22);border-radius:12px;margin:0 auto 12px;
+    display:grid;place-items:center;color:#e1bc72;font-family:"STSong","Songti SC",serif;font-size:25px;background:rgba(255,255,255,.04)}
+  .follow-cover h3{font-family:"STSong","Songti SC",serif;font-size:20px;letter-spacing:.08em}
+  .follow-cover p{font-size:10px;color:rgba(255,255,255,.5);margin-top:5px}
+  .follow-body{padding:20px;text-align:center}
+  .qr-placeholder{width:146px;height:146px;margin:0 auto 15px;border:1px solid var(--line);border-radius:7px;padding:9px;
+    background:repeating-linear-gradient(45deg,#f1f3f5,#f1f3f5 5px,#fff 5px,#fff 10px);display:grid;place-items:center}
+  .qr-placeholder img{width:100%;height:100%;object-fit:cover;background:#fff}
+  .qr-placeholder span{width:85px;background:#fff;padding:8px 4px;font-size:10px;line-height:1.5;color:var(--text-3)}
+  .follow-body strong{display:block;color:var(--navy);font-size:13px;margin-bottom:5px}
+  .follow-body p{font-size:10px;color:var(--text-3);line-height:1.65}
+  .copy-account{height:34px;margin-top:12px;padding:0 14px;border:1px solid var(--gold);border-radius:6px;
+    background:var(--gold-soft);color:#805d26;font-size:11px;font-weight:600;cursor:pointer;transition:.14s}
+  .copy-account:hover{background:#efe1c9}
+  .follow-guide{margin-top:15px;padding-top:15px;border-top:1px solid var(--line);text-align:left;font-size:10px;color:var(--text-3);line-height:1.8}
+  .follow-guide b{color:var(--gold);margin-right:5px}
+
+  /* 登录弹窗 */
+  .modal{position:fixed;inset:0;background:rgba(3,15,26,.58);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+  .modal.open{display:flex}
+  .login-card{width:min(390px,100%);background:#fff;border-radius:12px;box-shadow:0 24px 80px rgba(0,0,0,.25);overflow:hidden}
+  .login-top{background:var(--navy);color:#fff;padding:22px 25px;display:flex;align-items:center;justify-content:space-between}
+  .login-top h2{font-family:"STSong","Songti SC",serif;font-size:21px;letter-spacing:.06em}
+  .close-btn{border:0;background:transparent;color:rgba(255,255,255,.65);font-size:22px;cursor:pointer}
+  .wechat-login-body{padding:26px 28px 24px;text-align:center}
+  .wechat-icon{width:42px;height:42px;border-radius:50%;margin:0 auto 8px;background:#07c160;color:#fff;
+    display:grid;place-items:center;font-size:12px;font-weight:700;box-shadow:0 5px 15px rgba(7,193,96,.2)}
+  .wechat-login-body h3{font-size:15px;color:var(--navy);margin-bottom:5px}
+  .wechat-login-body>p{font-size:10px;color:var(--text-3)}
+  .login-qr{width:176px;height:176px;margin:18px auto 14px;border:1px solid var(--line-strong);border-radius:8px;
+    background:#f7f9fa;padding:13px;display:grid;place-items:center;position:relative}
+  .login-qr-inner{width:100%;height:100%;border:1px dashed #aeb9c3;background:#fff;display:grid;place-items:center;
+    color:var(--text-3);font-size:11px;line-height:1.7}
+  .login-qr-inner:before{content:"";position:absolute;width:20px;height:20px;border:4px solid var(--navy);
+    border-right:0;border-bottom:0;left:24px;top:24px}
+  .login-qr-inner:after{content:"";position:absolute;width:20px;height:20px;border:4px solid var(--navy);
+    border-left:0;border-top:0;right:24px;bottom:24px}
+  .scan-status{display:flex;justify-content:center;align-items:center;gap:6px;color:var(--text-2);font-size:11px}
+  .scan-status .pulse{width:7px;height:7px;border-radius:50%;background:#d29c42;box-shadow:0 0 0 4px rgba(210,156,66,.12)}
+  .login-note{margin-top:17px;padding-top:14px;border-top:1px solid var(--line);font-size:10px;line-height:1.65;color:var(--text-3)}
+
+  @media(max-width:900px){
+    .identity{min-width:auto}.brand-tagline,.update-state{display:none}.topbar{padding:0 16px}.topnav{margin-left:24px}
+    .topnav button{min-width:82px}.sidebar{width:215px}.content,.analysis-wrap{padding-left:18px;padding-right:18px}
+    .page-head{padding-left:20px;padding-right:20px}.article-layout{grid-template-columns:minmax(0,1fr) 260px}
+    .news-row{grid-template-columns:4px minmax(0,1fr) 75px}.source{display:none}
+  }
+  @media(max-width:650px){
+    .topbar{height:auto;min-height:62px;flex-wrap:wrap;padding:10px 12px 0}.identity{width:calc(100% - 92px)}
+    .brand-name{font-size:17px}.top-actions{position:absolute;right:12px;top:14px}.login-btn{font-size:0;width:36px;padding:0;justify-content:center}
+    .topnav{order:3;width:100%;height:42px;margin:5px 0 0}.topnav button{flex:1;min-width:0}
+    .workspace{height:calc(100vh - 104px)}.sidebar{width:62px}.side-intro,.side-foot,.sector-item .nm,.sector-item .cnt{display:none}
+    .sector-nav{padding:10px}.sector-item{justify-content:center;padding:9px}.sector-item .bar{width:5px;height:24px}
+    .page-head{position:relative}.title-line h1{font-size:22px}.content{padding:14px 11px 40px}
+    .news-row{grid-template-columns:4px minmax(0,1fr);gap:10px}.time{display:none}.analysis-wrap{padding:14px 11px 40px}
+    .analysis-hero{padding:20px}.analysis-brand{display:none}.article-layout{grid-template-columns:1fr}.follow-card{position:relative;top:auto}
+    .article-card{grid-template-columns:45px minmax(0,1fr) 14px;gap:10px}.article-date,.article-cover{width:45px;height:48px}.article-title{font-size:15px}
+  }
 </style>
 </head>
 <body>
-<a class="gh" href="https://github.com/simonlin1212/investment-news" target="_blank" rel="noopener" title="在 GitHub 上查看 / Star">
-  <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 012-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-</a>
-<div class="app">
-  <aside class="sidebar">
-    <div class="brand">
-      <span class="logo">▲</span>
-      <div class="bt">投资资讯<br><small>Investment News</small></div>
-      <button class="refresh" id="refreshBtn" title="刷新:重新抓取 + AI 要点 + 翻译"><span class="ri">⟳</span></button>
-    </div>
-    <div class="nav" id="nav"><div class="nav-label">赛道 / Sectors</div></div>
-    <div class="foot" id="foot"></div>
+<header class="topbar">
+  <div class="identity">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div><div class="brand-name">生财佑道产业资讯</div><div class="brand-tagline">INDUSTRY INTELLIGENCE</div></div>
+  </div>
+  <nav class="topnav" aria-label="主导航">
+    <button class="active" data-view="news">产业资讯</button>
+    <button data-view="analysis">产业分析</button>
+  </nav>
+  <div class="top-actions">
+    <span class="update-state" id="topUpdate">数据准备中</span>
+    <span class="auto-refresh" title="服务启动时刷新一次，之后每 6 小时自动更新">每 6 小时自动更新</span>
+    <button class="login-btn" id="loginBtn"><span class="avatar-dot">微</span><span>微信登录</span></button>
+  </div>
+</header>
+
+<div class="workspace">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-intro"><div class="eyebrow">Sector Monitor</div><h2>产业观察</h2><p>追踪全球产业链领先信号</p></div>
+    <div class="side-rule"></div>
+    <div class="sector-nav" id="sectorNav"></div>
+    <div class="side-foot" id="sideFoot"></div>
   </aside>
-  <main class="main">
-    <div class="head" id="head"></div>
-    <div id="board"></div>
-  </main>
+  <main class="main" id="main"><div class="empty">正在载入产业数据…</div></main>
 </div>
+
+<div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <div class="login-card">
+    <div class="login-top"><h2 id="loginTitle">微信扫码登录</h2><button class="close-btn" id="closeLogin" aria-label="关闭">×</button></div>
+    <div class="wechat-login-body">
+      <div class="wechat-icon">微信</div>
+      <h3>使用微信扫码登录</h3>
+      <p>打开微信，使用“扫一扫”完成安全登录</p>
+      <div class="login-qr"><div class="login-qr-inner">登录二维码<br>等待接入微信开放平台</div></div>
+      <div class="scan-status"><span class="pulse"></span><span>登录服务尚未配置</span></div>
+      <div class="login-note">需要配置微信开放平台 AppID、授权回调域名及服务端会话接口后，系统才会生成真实登录二维码。</div>
+    </div>
+  </div>
+</div>
+
 <script>
 function boot(){
-  var D = window.DATA || {industries:[]};
-  var inds = D.industries || [];
-  var nav = document.getElementById('nav');
-  var active = inds.length ? inds[0].key : null;
+  var D=window.DATA||{industries:[]}, inds=D.industries||[], active=inds.length?inds[0].key:null, currentView='news';
+  var W=window.WECHAT_CONTENT||{accountName:'硅基世纪',articles:[]};
+  var main=document.getElementById('main'), sectorNav=document.getElementById('sectorNav');
+  function esc(s){return (''+(s||'')).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]})}
+  function safeUrl(u){u=(''+(u||'')).trim();return /^https?:\/\//i.test(u)?esc(u):''}
+  function safeAsset(u){u=(''+(u||'')).trim();return (/^https?:\/\//i.test(u)||/^[\w./-]+$/.test(u))?esc(u):''}
+  function hexA(hex,a){var n=hex.replace('#',''),r=parseInt(n.slice(0,2),16),g=parseInt(n.slice(2,4),16),b=parseInt(n.slice(4,6),16);return 'rgba('+r+','+g+','+b+','+a+')'}
+  function totalItems(){return inds.reduce(function(n,i){return n+(i.items||[]).length},0)}
 
-  function hexA(hex, a){ // #rrggbb + alpha(0-1) -> rgba
-    var n = hex.replace('#','');
-    var r=parseInt(n.substr(0,2),16), g=parseInt(n.substr(2,2),16), b=parseInt(n.substr(4,2),16);
-    return 'rgba('+r+','+g+','+b+','+a+')';
-  }
+  document.getElementById('topUpdate').textContent='更新于 '+(D.generated_at||'—');
+  var observedRefresh=sessionStorage.getItem('refresh-finished')||'';
+  function watchRefresh(){fetch('/api/refresh-status').then(function(r){return r.json()}).then(function(s){
+    var label=document.getElementById('topUpdate');
+    if(s.running){label.textContent='后台正在更新数据…'}
+    else if(s.last_ok===false){label.textContent='上次自动更新失败'}
+    else{label.textContent='更新于 '+(D.generated_at||'—')}
+    if(s.last_finished&&s.last_finished!==observedRefresh){
+      observedRefresh=s.last_finished;sessionStorage.setItem('refresh-finished',observedRefresh);
+      if(s.last_ok)location.reload();
+    }
+  }).catch(function(){})}
+  watchRefresh();setInterval(watchRefresh,60000);
+  document.getElementById('sideFoot').innerHTML='<span class="source-stat">'+(D.stats?D.stats.total_sources:'—')+' 个权威源</span><br>'+inds.length+' 个重点产业赛道<br>仅供产业研究参考，不构成投资建议';
 
-  // 侧边栏
   inds.forEach(function(ind){
-    var el = document.createElement('div');
-    el.className = 'nav-item'; el.dataset.key = ind.key;
-    el.innerHTML = '<span class="dot" style="background:'+ind.accent+'"></span>'
-      + '<span class="nm">'+ind.name+'</span>'
-      + '<span class="cnt">'+ind.total+'</span>';
-    el.onclick = function(){ setActive(ind.key); };
-    nav.appendChild(el);
+    var el=document.createElement('div');el.className='sector-item';el.dataset.key=ind.key;
+    el.innerHTML='<span class="bar" style="background:'+ind.accent+'"></span><span class="nm">'+esc(ind.name)+'</span><span class="cnt">'+(ind.items||[]).length+'</span>';
+    el.onclick=function(){active=ind.key;if(currentView!=='news')setView('news');else renderNews(ind)};
+    sectorNav.appendChild(el);
   });
 
-  document.getElementById('foot').innerHTML =
-    '<b style="color:hsl(var(--foreground))">'+(D.stats?D.stats.total_sources:'–')+'</b> 个源 · '
-    + inds.length + ' 赛道<br><span style="opacity:.72">本地运行 · 你的 AI</span>'
-    + '<br><span style="opacity:.5;font-size:10px">仅资讯，非投资建议 · Not financial advice</span>';
-
-  function setActive(key){
-    active = key;
-    var ind = inds.find(function(x){return x.key===key;});
-    // 侧边栏高亮
-    document.querySelectorAll('.nav-item').forEach(function(n){
-      var on = n.dataset.key===key; n.classList.toggle('active', on);
-      n.style.background = on ? hexA(ind.accent,0.12) : '';
-      n.querySelector('.nm').style.color = on ? ind.accent : '';
-    });
-    renderMain(ind);
+  function syncSector(key){
+    document.querySelectorAll('.sector-item').forEach(function(el){el.classList.toggle('active',el.dataset.key===key)})
   }
 
-  function renderMain(ind){
-    var ac = ind.accent;
-    document.getElementById('head').innerHTML =
-      '<div class="ttl"><span class="bdg" style="background:'+hexA(ac,0.14)+';color:'+ac+'">●</span>'
-      + '<h1>'+ind.name+'</h1></div>'
-      + '<div class="sub">共 <b>'+ind.total+'</b> 个信息源 · 本栏 <b>'+ind.items.length+'</b> 条'
-      + '<span class="pill" style="background:'+hexA(ac,0.12)+';color:'+ac+'">最近 '+(D.recent_days||120)+' 天</span>'
-      + ' · 更新 '+(D.generated_at||'')+' · 本地抓取';
-    var board = document.getElementById('board');
-    if(!ind.items.length){ board.className=''; board.innerHTML = '<div class="empty">该行业暂未抓到条目。</div>'; return; }
+  function renderNews(ind){
+    syncSector(ind.key);var ac=ind.accent,items=ind.items||[],pts=ind.points||[];
+    var digest=pts.length?'<section class="digest"><div class="digest-head"><span class="symbol" style="background:'+hexA(ac,.12)+';color:'+ac+'">◆</span><h3>今日产业研判</h3><span>AI 多源提炼 · '+pts.length+' 项关键信号</span></div><ol class="digest-list">'+pts.map(function(p,i){var t=typeof p==='string'?p:(p.t||''),u=typeof p==='object'?safeUrl(p.url):'';return '<li><span class="index">'+String(i+1).padStart(2,'0')+'</span><span class="point">'+esc(t)+'</span>'+(u?'<a href="'+u+'" target="_blank" rel="noopener">查看原文 ↗</a>':'')+'</li>'}).join('')+'</ol></section>':'';
+    var rows=items.map(function(it){var zh=it.zh&&it.zh.trim(),primary=esc(zh?it.zh:it.title),secondary=esc(zh?it.title:(it.summary||'')),u=safeUrl(it.url);return '<article class="news-row"><span class="signal" style="background:'+ac+'"></span><div class="news-body">'+(u?'<a class="news-title" href="'+u+'" target="_blank" rel="noopener">'+primary+'</a>':'<span class="news-title">'+primary+'</span>')+(secondary?'<div class="news-en">'+secondary+'</div>':'')+'</div><span class="source" style="color:'+ac+';background:'+hexA(ac,.1)+'">'+esc(it.source)+'</span><time class="time">'+esc(it.time||'—')+'</time></article>'}).join('');
+    main.innerHTML='<header class="page-head"><div class="breadcrumb">产业资讯 <span>›</span> <b>'+esc(ind.name)+'</b></div><div class="title-line"><h1>'+esc(ind.name)+'</h1><span class="status-chip" style="background:'+hexA(ac,.1)+';color:'+ac+'">持续跟踪</span></div><div class="head-sub"><span><strong>'+ind.total+'</strong> 个信息源</span><span class="sep"></span><span><strong>'+items.length+'</strong> 条有效资讯</span><span class="sep"></span><span>观察窗口：最近 '+(D.recent_days||120)+' 天</span><span class="sep"></span><span>北京时间 '+esc(D.generated_at||'—')+'</span></div></header><div class="content">'+digest+'<div class="section-bar"><h3>资讯明细</h3><p>按发布时间倒序排列</p><span class="legend">点击标题查看原始信源</span></div>'+(rows?'<div class="news-list">'+rows+'</div>':'<div class="empty">该行业暂未抓到有效资讯</div>')+'</div>';
+  }
 
-    // AI 今日要点卡
-    var pts = ind.points || [];
-    var digest = pts.length ? (
-      '<div class="digest" style="border-color:'+hexA(ac,0.30)+';background:'+hexA(ac,0.06)+'">'
-      + '<div class="dh" style="color:'+ac+'">✦ AI 今日要点</div>'
-      + '<ul>' + pts.map(function(p){
-          var t = (typeof p === 'string') ? p : (p.t||'');
-          var url = (p && typeof p === 'object') ? (p.url||'') : '';
-          var su = safeUrl(url);
-          var jump = su ? '<a class="dj" href="'+su+'" target="_blank" rel="noopener" title="跳转原文" style="color:'+ac+'">↗</a>' : '';
-          return '<li><span class="b" style="background:'+ac+'"></span><span class="pt">'+esc(t)+'</span>'+jump+'</li>';
-        }).join('') + '</ul></div>'
-    ) : '';
-
-    // 新闻行(中文标题 + 原文小字)
-    var rows = ind.items.map(function(it){
-      var hasZh = it.zh && it.zh.trim();
-      var primary = esc(hasZh ? it.zh : it.title);
-      var secondary = hasZh ? esc(it.title) : esc(it.summary||'');
-      var su = safeUrl(it.url);
-      var link = su ? '<a class="rt" href="'+su+'" target="_blank" rel="noopener">'+primary+'</a>'
-                    : '<span class="rt">'+primary+'</span>';
-      return '<div class="row" onmouseover="this.style.borderColor=\''+hexA(ac,0.45)+'\'" onmouseout="this.style.borderColor=\'\'">'
-        + '<span class="rdot" style="background:'+ac+'"></span>'
-        + '<div class="rbody">' + link
-        + (secondary?'<div class="'+(hasZh?'ren':'rs')+'">'+secondary+'</div>':'')
-        + '</div>'
-        + '<div class="rmeta">'
-        +   '<span class="rsrc" style="background:'+hexA(ac,0.12)+';color:'+ac+'">'+esc(it.source)+'</span>'
-        +   '<span class="rtm">'+esc(it.time||'—')+'</span>'
-        + '</div></div>';
+  function renderAnalysis(){
+    var account=esc(W.accountName||'硅基世纪'),articles=(W.articles||[]).filter(function(a){return a&&a.title&&safeUrl(a.url)});
+    articles.sort(function(a,b){return (b.order||0)-(a.order||0)||(b.date||'').localeCompare(a.date||'')});
+    var cards=articles.map(function(a){
+      var d=(a.date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/),relative=a.dateLabel||'',day=d?d[3]:(relative==='昨天'?'昨':(relative.match(/^\d+/)||['文'])[0]),month=d?(d[1]+'.'+d[2]):(relative==='昨天'?'天':relative.replace(/^\d+/,''))||'NEW',cover=safeAsset(a.cover);
+      var lead=cover?'<span class="article-cover"><img src="'+cover+'" alt="" loading="lazy" referrerpolicy="no-referrer"></span>':'<span class="article-date"><b>'+esc(day)+'</b><span>'+esc(month)+'</span></span>';
+      return '<a class="article-card" href="'+safeUrl(a.url)+'" target="_blank" rel="noopener">'+lead+'<span class="article-main"><span class="article-meta"><span class="article-category">'+esc(a.category||'产业观察')+'</span><span>'+esc(a.readTime||'深度阅读')+'</span>'+(a.featured?'<span>· 编辑推荐</span>':'')+'</span><span class="article-title">'+esc(a.title)+'</span><span class="article-summary">'+esc(a.summary||'点击进入微信公众号阅读完整文章')+'</span></span><span class="article-arrow">›</span></a>';
     }).join('');
-
-    board.className='';
-    board.innerHTML = digest + '<div class="list">' + rows + '</div>';
+    var empty='<div class="article-empty"><div class="empty-mark">文</div><h3>公众号文章正在整理</h3><p>文章列表已经独立配置完成。添加公众号原文链接后，<br>这里会自动按日期展示并跳转至微信文章。</p></div>';
+    var qr=safeAsset(W.qrImage),qrBox=qr?'<div class="qr-placeholder"><img src="'+qr+'" alt="'+account+'公众号二维码"></div>':'<div class="qr-placeholder"><span>微信搜索<br><b>'+account+'</b><br>关注公众号</span></div>';
+    main.innerHTML='<div class="analysis-wrap"><section class="analysis-hero"><div><div class="eyebrow">Original Insights</div><h1>产业深度 · 原创分析</h1><p>'+esc(W.description||'汇集原创产业观察，以长期视角理解技术与商业趋势。')+'</p></div><div class="analysis-brand">微信公众号<b>'+account+'</b>'+esc(W.tagline||'')+'</div></section><div class="article-layout"><section class="article-panel"><div class="article-panel-head"><h3>最新文章</h3><span>公众号原创内容</span><em>共 '+articles.length+' 篇</em></div>'+(cards?'<div class="article-list">'+cards+'</div>':empty)+'</section><aside class="follow-card"><div class="follow-cover"><div class="follow-logo">财</div><h3>'+account+'</h3><p>微信公众号 · 产业深度内容</p></div><div class="follow-body">'+qrBox+'<strong>关注公众号，获取持续更新</strong><p>'+esc(W.tagline||'关注 AI、机器人与产业智能的长期趋势')+'</p><button class="copy-account" id="copyAccount">复制公众号名称</button><div class="follow-guide"><div><b>01</b>打开微信，点击顶部搜索</div><div><b>02</b>搜索“'+account+'”并进入公众号</div><div><b>03</b>点击关注，及时获取深度文章</div></div></div></aside></div></div>';
+    var copy=document.getElementById('copyAccount');if(copy)copy.onclick=function(){var name=W.accountName||'硅基世纪';if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(name).then(function(){copy.textContent='已复制：'+name})}else{window.prompt('复制公众号名称',name)}};
   }
-  function esc(s){return (s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-  // 外链来自 RSS <link>(源方可控):只放行 http(s) 并转义,防属性逃逸 XSS 和 javascript: 伪协议
-  function safeUrl(u){u=(''+(u||'')).trim();return /^https?:\/\//i.test(u)?esc(u):'';}
 
-  if(active) setActive(active);
+  function setView(view){
+    currentView=view;document.querySelectorAll('.topnav button').forEach(function(b){b.classList.toggle('active',b.dataset.view===view)});
+    document.getElementById('sidebar').style.display=view==='news'?'flex':'none';
+    if(view==='analysis')renderAnalysis();else if(active)renderNews(inds.find(function(i){return i.key===active}));
+  }
+  document.querySelectorAll('.topnav button').forEach(function(b){b.onclick=function(){setView(b.dataset.view)}});
 
-  var rb = document.getElementById('refreshBtn');
-  if(rb) rb.onclick = function(){
-    if(rb.classList.contains('spin')) return;
-    rb.classList.add('spin');
-    fetch('/api/refresh', {method:'POST'})
-      .then(function(r){ return r.json(); })
-      .then(function(d){
-        if(d && d.ok){ location.reload(); }
-        else { rb.classList.remove('spin'); alert('刷新失败:\n'+((d&&d.error)||'未知错误')); }
-      })
-      .catch(function(e){ rb.classList.remove('spin');
-        alert('刷新失败: '+e+'\n(刷新需用 server.py 启动看板,纯静态服务没有刷新接口)'); });
-  };
+  var modal=document.getElementById('loginModal');
+  document.getElementById('loginBtn').onclick=function(){modal.classList.add('open')};
+  document.getElementById('closeLogin').onclick=function(){modal.classList.remove('open')};
+  modal.onclick=function(e){if(e.target===modal)modal.classList.remove('open')};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')modal.classList.remove('open')});
+
+  if(active)renderNews(inds[0]);else main.innerHTML='<div class="empty">暂无产业数据</div>';
 }
-var _s=document.createElement('script'); _s.src='data.js?t='+Date.now(); _s.onload=boot;
-_s.onerror=function(){document.getElementById('board').innerHTML='<div class="empty">数据加载失败</div>';};
-document.head.appendChild(_s);
+var wechatScript=document.createElement('script');wechatScript.src='wechat-articles.js?t='+Date.now();
+wechatScript.onload=loadNewsData;wechatScript.onerror=loadNewsData;document.head.appendChild(wechatScript);
+function loadNewsData(){var dataScript=document.createElement('script');dataScript.src='data.js?t='+Date.now();dataScript.onload=boot;
+dataScript.onerror=function(){document.getElementById('main').innerHTML='<div class="empty">产业数据加载失败</div>'};document.head.appendChild(dataScript)}
 </script>
 </body>
 </html>

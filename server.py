@@ -1,16 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""server.py —— 本地看板服务 + 刷新接口(纯标准库)。
+"""server.py —— 本地看板服务 + 六小时后台自动刷新(纯标准库)。
 - 静态服务整个 investment-news 目录(看板、data、脚本)
-- POST /api/refresh → 跑 scripts/fetch.py(抓取+红线+最近N天) 再跑 scripts/digest.py
-  (用 llm.config.json 配的大模型出「今日要点」+翻译),完成后返回 JSON。前端按钮转圈等它。
+- 服务启动后自动执行 scripts/fetch.py + scripts/digest.py,之后每 6 小时执行一次。
+- POST /api/refresh 已禁用;GET /api/refresh-status 可查看后台任务状态。
 跑法: python3 server.py [port]   默认 8793
 """
-import os, sys, json, subprocess
+import os, sys, json, subprocess, threading
+from datetime import datetime
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8793
+REFRESH_INTERVAL = 6 * 60 * 60
+REFRESH_LOCK = threading.Lock()
+REFRESH_STATE = {
+    "running": False,
+    "last_started": None,
+    "last_finished": None,
+    "last_ok": None,
+    "error": "",
+}
 
 
 def child_env():
@@ -22,14 +32,12 @@ def child_env():
     return env
 
 
-class Handler(SimpleHTTPRequestHandler):
-    def __init__(self, *a, **k):
-        super().__init__(*a, directory=HERE, **k)
-
-    def log_message(self, *a):
-        pass
-
-    def _refresh(self):
+def run_refresh():
+    """执行一次抓取与摘要；同一时间只允许一个刷新任务运行。"""
+    if not REFRESH_LOCK.acquire(blocking=False):
+        return {"ok": False, "error": "刷新任务已在运行"}
+    REFRESH_STATE.update(running=True, last_started=datetime.now().isoformat(timespec="seconds"), error="")
+    try:
         try:
             py = sys.executable
             env = child_env()
@@ -41,9 +49,40 @@ class Handler(SimpleHTTPRequestHandler):
             payload = {"ok": ok, "fetch": (r1.stdout or "")[-500:], "digest": (r2.stdout or "")[-500:]}
             if not ok:
                 payload["error"] = ((r2.stderr or "") + (r1.stderr or ""))[-500:]
-            code = 200 if ok else 500
+            if not ok:
+                print("自动刷新失败:", payload.get("error", "未知错误"))
         except Exception as e:
-            payload, code = {"ok": False, "error": str(e)}, 500
+            payload = {"ok": False, "error": str(e)}
+            print("自动刷新异常:", e)
+        REFRESH_STATE.update(
+            running=False,
+            last_finished=datetime.now().isoformat(timespec="seconds"),
+            last_ok=bool(payload.get("ok")),
+            error=payload.get("error", ""),
+        )
+        return payload
+    finally:
+        REFRESH_LOCK.release()
+
+
+def refresh_loop():
+    """启动时刷新一次，之后每 6 小时刷新。"""
+    while True:
+        print("开始后台自动刷新…")
+        result = run_refresh()
+        if result.get("ok"):
+            print("后台自动刷新完成，下次刷新将在 6 小时后执行。")
+        threading.Event().wait(REFRESH_INTERVAL)
+
+
+class Handler(SimpleHTTPRequestHandler):
+    def __init__(self, *a, **k):
+        super().__init__(*a, directory=HERE, **k)
+
+    def log_message(self, *a):
+        pass
+
+    def _json(self, payload, code=200):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -53,16 +92,18 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         if self.path.startswith("/api/refresh"):
-            return self._refresh()
+            return self._json({"ok": False, "error": "已关闭手动刷新，系统每 6 小时自动更新"}, 405)
         self.send_error(404)
 
     def do_GET(self):
-        # /api/refresh 只走 POST:GET 会跑 fetch.py+claude 子进程,若可 GET 触发则易被
-        # <img>/跳转做 CSRF。这里让它落到静态处理(404),仅 do_POST 才真正刷新。
+        if self.path.startswith("/api/refresh-status"):
+            return self._json(dict(REFRESH_STATE, interval_hours=6))
         return super().do_GET()
 
 
 if __name__ == "__main__":
     print("看板服务已启动: http://localhost:%d/index.html   (Ctrl+C 停止)" % PORT)
-    # 只绑回环:看板+/api/refresh 会跑本机子进程(fetch.py/claude),绝不能对局域网开放。
+    print("数据刷新策略:启动后自动刷新,之后每 6 小时刷新一次(不支持手动刷新)")
+    threading.Thread(target=refresh_loop, name="auto-refresh", daemon=True).start()
+    # 只绑定回环地址，避免将本地看板暴露给局域网。
     ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
