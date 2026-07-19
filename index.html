@@ -25,8 +25,9 @@
   ::-webkit-scrollbar-thumb{background:#bdc7d0;border-radius:8px}
 
   /* 顶部品牌与主导航 */
-  .topbar{height:68px;background:var(--navy);color:#fff;display:flex;align-items:center;
-    padding:0 28px;position:relative;z-index:30;box-shadow:0 2px 12px rgba(4,17,29,.2)}
+  .topbar{height:68px;background:var(--navy);color:#fff;position:relative;z-index:30;
+    box-shadow:0 2px 12px rgba(4,17,29,.2)}
+  .topbar-inner{height:100%;width:100%;max-width:1800px;margin:0 auto;padding:0 28px;display:flex;align-items:center}
   .identity{display:flex;align-items:center;gap:12px;min-width:310px}
   .brand-mark{width:36px;height:36px;border:1px solid rgba(255,255,255,.28);border-radius:8px;
     display:grid;place-items:center;position:relative;background:linear-gradient(145deg,#173c5d,#0b1f33)}
@@ -56,7 +57,8 @@
     display:grid;place-items:center;font-weight:700}
   @keyframes spin{to{transform:rotate(360deg)}}
 
-  .workspace{height:calc(100vh - 68px);display:flex;overflow:hidden}
+  .workspace{height:calc(100vh - 68px);width:100%;max-width:1800px;margin:0 auto;display:flex;overflow:hidden;
+    background:var(--bg);box-shadow:0 0 0 1px rgba(15,35,52,.03)}
 
   /* 行业侧栏 */
   .sidebar{width:252px;flex-shrink:0;background:#eef2f5;border-right:1px solid var(--line-strong);
@@ -79,9 +81,10 @@
   .source-stat{color:var(--navy);font-weight:700;font-size:12px}
 
   /* 内容区 */
-  .main{flex:1;overflow:auto;min-width:0}
+  .main{flex:1;overflow:auto;overflow-x:hidden;min-width:0}
   .page-head{padding:25px 32px 20px;background:var(--surface);border-bottom:1px solid var(--line);
     position:sticky;top:0;z-index:10}
+  .page-head-inner{width:100%;max-width:1480px;margin:0 auto}
   .breadcrumb{font-size:11px;color:var(--text-3);display:flex;gap:7px;align-items:center;margin-bottom:12px}
   .breadcrumb b{color:var(--gold);font-weight:600}
   .title-line{display:flex;align-items:flex-end;gap:14px}
@@ -90,7 +93,7 @@
   .head-sub{margin-top:9px;color:var(--text-3);font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .head-sub strong{color:var(--text-2)}
   .sep{width:1px;height:11px;background:var(--line-strong)}
-  .content{padding:20px 30px 60px;max-width:1440px}
+  .content{width:100%;padding:20px 30px 60px;max-width:1540px;margin:0 auto}
 
   /* 研判摘要 */
   .digest{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);margin-bottom:18px;
@@ -130,7 +133,7 @@
   .empty{padding:70px 30px;color:var(--text-3);text-align:center}
 
   /* 公众号文章中心 */
-  .analysis-wrap{padding:26px 30px 60px;max-width:1380px}
+  .analysis-wrap{width:100%;padding:26px 30px 60px;max-width:1480px;margin:0 auto}
   .analysis-hero{background:linear-gradient(125deg,var(--navy),var(--navy-2));color:#fff;padding:28px 30px;border-radius:12px;
     display:flex;justify-content:space-between;align-items:flex-end;box-shadow:var(--shadow);position:relative;overflow:hidden}
   .analysis-hero:after{content:"道";position:absolute;right:34px;top:-34px;font-family:"STSong","Songti SC",serif;
@@ -214,26 +217,39 @@
   .login-note{margin-top:17px;padding-top:14px;border-top:1px solid var(--line);font-size:10px;line-height:1.65;color:var(--text-3)}
 
   @media(max-width:900px){
-    .identity{min-width:auto}.brand-tagline,.update-state{display:none}.topbar{padding:0 16px}.topnav{margin-left:24px}
+    .identity{min-width:auto}.brand-tagline,.update-state{display:none}.topbar-inner{padding:0 16px}.topnav{margin-left:24px}
     .topnav button{min-width:82px}.sidebar{width:215px}.content,.analysis-wrap{padding-left:18px;padding-right:18px}
     .page-head{padding-left:20px;padding-right:20px}.article-layout{grid-template-columns:minmax(0,1fr) 260px}
     .news-row{grid-template-columns:4px minmax(0,1fr) 75px}.source{display:none}
   }
   @media(max-width:650px){
-    .topbar{height:auto;min-height:62px;flex-wrap:wrap;padding:10px 12px 0}.identity{width:calc(100% - 92px)}
-    .brand-name{font-size:17px}.top-actions{position:absolute;right:12px;top:14px}.login-btn{font-size:0;width:36px;padding:0;justify-content:center}
+    .topbar{height:104px}.topbar-inner{height:104px;flex-wrap:wrap;padding:10px 12px 0}.identity{width:calc(100% - 48px)}
+    .brand-name{font-size:17px}.top-actions{position:absolute;right:12px;top:14px}.auto-refresh{display:none}.login-btn{font-size:0;width:36px;padding:0;justify-content:center}
     .topnav{order:3;width:100%;height:42px;margin:5px 0 0}.topnav button{flex:1;min-width:0}
-    .workspace{height:calc(100vh - 104px)}.sidebar{width:62px}.side-intro,.side-foot,.sector-item .nm,.sector-item .cnt{display:none}
-    .sector-nav{padding:10px}.sector-item{justify-content:center;padding:9px}.sector-item .bar{width:5px;height:24px}
-    .page-head{position:relative}.title-line h1{font-size:22px}.content{padding:14px 11px 40px}
-    .news-row{grid-template-columns:4px minmax(0,1fr);gap:10px}.time{display:none}.analysis-wrap{padding:14px 11px 40px}
+    .workspace{height:calc(100vh - 104px);height:calc(100dvh - 104px);flex-direction:column}
+    .sidebar{width:100%;height:50px;flex:none;border-right:0;border-bottom:1px solid var(--line-strong)}
+    .side-intro,.side-rule,.side-foot,.sector-item .cnt{display:none}
+    .sector-nav{display:flex;align-items:center;gap:6px;padding:7px 10px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+    .sector-nav::-webkit-scrollbar{display:none}.sector-item{flex:0 0 auto;justify-content:center;padding:7px 10px;margin:0;background:rgba(255,255,255,.45)}
+    .sector-item .nm{display:block;font-size:12px;max-width:none}.sector-item .bar{width:3px;height:15px}
+    .main{min-height:0}.page-head{position:relative;padding:18px 15px 15px}.breadcrumb{margin-bottom:9px}.title-line h1{font-size:22px}
+    .head-sub{gap:6px}.head-sub span:nth-child(n+4){display:none}
+    .content{padding:13px 10px 40px}.digest{margin-bottom:14px}.digest-head{padding:0 13px}.digest-head span:last-child{display:none}
+    .digest-list{padding:8px 13px 10px}.digest-list li{font-size:12.5px;gap:8px}.digest-list a{display:none}
+    .section-bar .legend{display:none}.news-row{grid-template-columns:4px minmax(0,1fr);gap:10px;min-height:64px;padding:10px 12px}.time{display:none}
+    .news-title{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13.5px}
+    .news-en{font-size:10px}.analysis-wrap{padding:12px 10px 40px}
     .analysis-hero{padding:20px}.analysis-brand{display:none}.article-layout{grid-template-columns:1fr}.follow-card{position:relative;top:auto}
-    .article-card{grid-template-columns:45px minmax(0,1fr) 14px;gap:10px}.article-date,.article-cover{width:45px;height:48px}.article-title{font-size:15px}
+    .analysis-hero h1{font-size:22px}.analysis-hero p{line-height:1.6}.follow-card{order:-1}
+    .article-panel-head{padding:14px}.article-list{padding:2px 11px}.article-card{grid-template-columns:58px minmax(0,1fr) 12px;gap:10px;padding:13px 1px}
+    .article-date,.article-cover{width:58px;height:58px}.article-title{font-size:15px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .article-summary{display:none}.article-meta{margin-bottom:4px}.qr-placeholder{width:130px;height:130px}
   }
+  @media(min-width:1801px){body{background:#e9edf1}.workspace{border-left:1px solid var(--line-strong);border-right:1px solid var(--line-strong)}}
 </style>
 </head>
 <body>
-<header class="topbar">
+<header class="topbar"><div class="topbar-inner">
   <div class="identity">
     <div class="brand-mark" aria-hidden="true"></div>
     <div><div class="brand-name">生财佑道产业资讯</div><div class="brand-tagline">INDUSTRY INTELLIGENCE</div></div>
@@ -247,7 +263,7 @@
     <span class="auto-refresh" title="服务启动时刷新一次，之后每 6 小时自动更新">每 6 小时自动更新</span>
     <button class="login-btn" id="loginBtn"><span class="avatar-dot">微</span><span>微信登录</span></button>
   </div>
-</header>
+</div></header>
 
 <div class="workspace">
   <aside class="sidebar" id="sidebar">
@@ -314,7 +330,7 @@ function boot(){
     syncSector(ind.key);var ac=ind.accent,items=ind.items||[],pts=ind.points||[];
     var digest=pts.length?'<section class="digest"><div class="digest-head"><span class="symbol" style="background:'+hexA(ac,.12)+';color:'+ac+'">◆</span><h3>今日产业研判</h3><span>AI 多源提炼 · '+pts.length+' 项关键信号</span></div><ol class="digest-list">'+pts.map(function(p,i){var t=typeof p==='string'?p:(p.t||''),u=typeof p==='object'?safeUrl(p.url):'';return '<li><span class="index">'+String(i+1).padStart(2,'0')+'</span><span class="point">'+esc(t)+'</span>'+(u?'<a href="'+u+'" target="_blank" rel="noopener">查看原文 ↗</a>':'')+'</li>'}).join('')+'</ol></section>':'';
     var rows=items.map(function(it){var zh=it.zh&&it.zh.trim(),primary=esc(zh?it.zh:it.title),secondary=esc(zh?it.title:(it.summary||'')),u=safeUrl(it.url);return '<article class="news-row"><span class="signal" style="background:'+ac+'"></span><div class="news-body">'+(u?'<a class="news-title" href="'+u+'" target="_blank" rel="noopener">'+primary+'</a>':'<span class="news-title">'+primary+'</span>')+(secondary?'<div class="news-en">'+secondary+'</div>':'')+'</div><span class="source" style="color:'+ac+';background:'+hexA(ac,.1)+'">'+esc(it.source)+'</span><time class="time">'+esc(it.time||'—')+'</time></article>'}).join('');
-    main.innerHTML='<header class="page-head"><div class="breadcrumb">产业资讯 <span>›</span> <b>'+esc(ind.name)+'</b></div><div class="title-line"><h1>'+esc(ind.name)+'</h1><span class="status-chip" style="background:'+hexA(ac,.1)+';color:'+ac+'">持续跟踪</span></div><div class="head-sub"><span><strong>'+ind.total+'</strong> 个信息源</span><span class="sep"></span><span><strong>'+items.length+'</strong> 条有效资讯</span><span class="sep"></span><span>观察窗口：最近 '+(D.recent_days||120)+' 天</span><span class="sep"></span><span>北京时间 '+esc(D.generated_at||'—')+'</span></div></header><div class="content">'+digest+'<div class="section-bar"><h3>资讯明细</h3><p>按发布时间倒序排列</p><span class="legend">点击标题查看原始信源</span></div>'+(rows?'<div class="news-list">'+rows+'</div>':'<div class="empty">该行业暂未抓到有效资讯</div>')+'</div>';
+    main.innerHTML='<header class="page-head"><div class="page-head-inner"><div class="breadcrumb">产业资讯 <span>›</span> <b>'+esc(ind.name)+'</b></div><div class="title-line"><h1>'+esc(ind.name)+'</h1><span class="status-chip" style="background:'+hexA(ac,.1)+';color:'+ac+'">持续跟踪</span></div><div class="head-sub"><span><strong>'+ind.total+'</strong> 个信息源</span><span class="sep"></span><span><strong>'+items.length+'</strong> 条有效资讯</span><span class="sep"></span><span>观察窗口：最近 '+(D.recent_days||120)+' 天</span><span class="sep"></span><span>北京时间 '+esc(D.generated_at||'—')+'</span></div></div></header><div class="content">'+digest+'<div class="section-bar"><h3>资讯明细</h3><p>按发布时间倒序排列</p><span class="legend">点击标题查看原始信源</span></div>'+(rows?'<div class="news-list">'+rows+'</div>':'<div class="empty">该行业暂未抓到有效资讯</div>')+'</div>';
   }
 
   function renderAnalysis(){
