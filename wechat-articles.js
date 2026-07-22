@@ -990,6 +990,90 @@ window.WECHAT_CONTENT = {
       "readTime": "公众号原文",
       "cover": "https://mmbiz.qpic.cn/mmbiz_jpg/1pLO8fJcwgDy22hQFicGZ2j8dqkYM2YIR8hcja9kB75vX9IrG6WaOaLjpDfmyquM1ic0spia7BKXXl4XeaR8hMbibTRuUaLnfC3o5JJCHoauAAA/300",
       "order": 82,
+      "featured": false
+    },
+    {
+      "title": "ABF载板：AI芯片的隐形地基",
+      "summary": "来自“生财佑道”公众号产业分析合集，点击阅读完整文章。",
+      "url": "https://mp.weixin.qq.com/s?__biz=MzAxNDY3MjIxNA==&mid=2456241083&idx=1&sn=b45fd003b54a73a82d2cfe1d17b7c408&chksm=8c1c2b82bb6ba2942c330d751c94f28569f832532641cf7b07c08ce3f8d8e77cf8a2b7fdf4e0#rd",
+      "date": "2026-07-19",
+      "dateLabel": "07/19",
+      "category": "半导体材料",
+      "readTime": "公众号原文",
+      "cover": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/1pLO8fJcwgBwG8n64Q4MPy45D4mnSAdw9ibyQxkyXSTC0PhDvmickiaKaL1z8PSAC5GPIuf3LKblJ9czhnr1t8w2AllLGyKzX08eNialrmsQnsI/300",
+      "order": 83,
+      "featured": false
+    },
+    {
+      "title": "高频铜箔：卡住AI的血管",
+      "summary": "来自“生财佑道”公众号产业分析合集，点击阅读完整文章。",
+      "url": "https://mp.weixin.qq.com/s?__biz=MzAxNDY3MjIxNA==&mid=2456241100&idx=1&sn=e07b9bc2372e0f1fc2e2fa91095f8aa2&chksm=8c1c2bf5bb6ba2e3624a0c4773a60f8297e8cfba610b28c2135dc771ad87d6ea3f88486459a5#rd",
+      "date": "2026-07-20",
+      "dateLabel": "07/20",
+      "category": "AI 算力",
+      "readTime": "公众号原文",
+      "cover": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/1pLO8fJcwgCN7gEwuOicBTdEibYXVur9pG1V4e4Nwjgck3YxMDSmFgGGK0fREr0VicukEvDessYibc8u25ibZDU9BaPF8WvLJYppibBF91PibgTibaQ/300",
+      "order": 84,
+      "featured": false
+    },
+    {
+      "title": "氦气：芯片隐形血液",
+      "summary": "来自“生财佑道”公众号产业分析合集，点击阅读完整文章。",
+      "url": "https://mp.weixin.qq.com/s?__biz=MzAxNDY3MjIxNA==&mid=2456241101&idx=1&sn=0c43b1b70a3fae4aa70aa5b1283bd4f4&chksm=8c1c2bf4bb6ba2e296c94374b3f89809d243cec2bdccc25f4ecbeca39edc07ad5e199b3aa5ab#rd",
+      "date": "2026-07-20",
+      "dateLabel": "07/20",
+      "category": "半导体材料",
+      "readTime": "公众号原文",
+      "cover": "https://mmbiz.qpic.cn/mmbiz_jpg/1pLO8fJcwgBL4XM4EwbeqEwTdFiaicuLaSeCDULrfWsfFCQ1kpoaM07euw8RdrWLgz0pN7qYICFbyFPVWIyud1NGVgDzmG5JCfibHE0I1ay5l0/300",
+      "order": 85,
+      "featured": false
+    },
+    {
+      "title": "抛光液：芯片的隐形磨刀石",
+      "summary": "来自“生财佑道”公众号产业分析合集，点击阅读完整文章。",
+      "url": "https://mp.weixin.qq.com/s?__biz=MzAxNDY3MjIxNA==&mid=2456241118&idx=1&sn=04fd2cc97d2ec340555c59476c31cfae&chksm=8c1c2be7bb6ba2f1de75d3fd828662ebeb1ed6ac6edc57b6ffb150f07cf4e08faff35f294fc7#rd",
+      "date": "2026-07-21",
+      "dateLabel": "07/21",
+      "category": "半导体材料",
+      "readTime": "公众号原文",
+      "cover": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/1pLO8fJcwgBFRlb00SWhm8PYzWxem5XT0CAVwrjvP2yMicwGUlnXsIj5HEjWUhDiaF0TtH1ZLVLahcIdjLpoBmrsqTzR3SttQoQt3LIPhQvQc/300",
+      "order": 86,
+      "featured": false
+    },
+    {
+      "title": "取向硅钢：电网隐形冠军",
+      "summary": "来自“生财佑道”公众号产业分析合集，点击阅读完整文章。",
+      "url": "https://mp.weixin.qq.com/s?__biz=MzAxNDY3MjIxNA==&mid=2456241127&idx=1&sn=7bce7ba0593422c9890d848262ed3c5f&chksm=8c1c2bdebb6ba2c812f64ac95e9c6ae1736036fa6251e384288a0b70c3eaebebb51219e86513#rd",
+      "date": "2026-07-21",
+      "dateLabel": "07/21",
+      "category": "产业观察",
+      "readTime": "公众号原文",
+      "cover": "https://mmbiz.qpic.cn/mmbiz_jpg/1pLO8fJcwgAGXowibOAnRwLnHwE4LtKRq4ARkz9CSHmKOqYBfXgWUveDicFgsBobeNBGyHevEvQE0y8FFTibEX2PRbphgJuXIJKWJicqXTqO0N0/300",
+      "order": 87,
+      "featured": false
+    },
+    {
+      "title": "薄膜铌酸锂：光模块心脏",
+      "summary": "来自“生财佑道”公众号产业分析合集，点击阅读完整文章。",
+      "url": "https://mp.weixin.qq.com/s?__biz=MzAxNDY3MjIxNA==&mid=2456241128&idx=1&sn=100d8abb1779e8bd0e245350edd70fe7&chksm=8c1c2bd1bb6ba2c79859f1362b64ad580d39e6479b5e3ca1e3d64586e4ceedab93aa742f4659#rd",
+      "date": "2026-07-21",
+      "dateLabel": "07/21",
+      "category": "光通信",
+      "readTime": "公众号原文",
+      "cover": "https://mmbiz.qpic.cn/mmbiz_jpg/1pLO8fJcwgCsFrpxkOoDGEjX7dEL9K4bOIRTebLR08b0IPPiceeYA7GPlZLr86OsxQJkmRGe3DK15bkHvfHYmaWZ8tRrMZw5GjY2ZkZnuEzo/300",
+      "order": 88,
+      "featured": false
+    },
+    {
+      "title": "硅微粉：AI芯片的隐形沙子",
+      "summary": "来自“生财佑道”公众号产业分析合集，点击阅读完整文章。",
+      "url": "https://mp.weixin.qq.com/s?__biz=MzAxNDY3MjIxNA==&mid=2456241137&idx=1&sn=cd883d5a9bdaf688c81a78fa6bd3430f&chksm=8c1c2bc8bb6ba2def1857bbe73b1015b0648604fa11e23553ebfa2701daaffd353dc82e56bf4#rd",
+      "date": "2026-07-22",
+      "dateLabel": "07/22",
+      "category": "半导体材料",
+      "readTime": "公众号原文",
+      "cover": "https://mmbiz.qpic.cn/mmbiz_jpg/1pLO8fJcwgA391VzibFLicibtnZJEzbM2jCThLFIIwvW4jrCIHzSFSOIFj3LxVxSBr7WRUaQtIyOaia8x5AJykuuhFnwxRMYzX0EtgoYM3Rw4II/300",
+      "order": 89,
       "featured": true
     }
   ]
