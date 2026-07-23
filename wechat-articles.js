@@ -1074,6 +1074,30 @@ window.WECHAT_CONTENT = {
       "readTime": "公众号原文",
       "cover": "https://mmbiz.qpic.cn/mmbiz_jpg/1pLO8fJcwgA391VzibFLicibtnZJEzbM2jCThLFIIwvW4jrCIHzSFSOIFj3LxVxSBr7WRUaQtIyOaia8x5AJykuuhFnwxRMYzX0EtgoYM3Rw4II/300",
       "order": 89,
+      "featured": false
+    },
+    {
+      "title": "卡住超节点的隐形光血管",
+      "summary": "来自“生财佑道”公众号产业分析合集，点击阅读完整文章。",
+      "url": "https://mp.weixin.qq.com/s?__biz=MzAxNDY3MjIxNA==&mid=2456241146&idx=1&sn=ad3704f12a2de8ce8ecd2413639e801f&chksm=8c1c2bc3bb6ba2d508dc6bd6176e45e4da6afc55e8cabc681e23f80bca369b31f3f4e3d8caf7#rd",
+      "date": "2026-07-23",
+      "dateLabel": "07/23",
+      "category": "光通信",
+      "readTime": "公众号原文",
+      "cover": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/1pLO8fJcwgAx45SCy5ssG48xxYSC5b3T0hD5HMJFpKFHIU9yYyCRIP6eZNcGGImCBMeC57GzibqFpUDLoI5D6GOWJ7ZoiceLlsrxmNDStF8vo/300",
+      "order": 90,
+      "featured": false
+    },
+    {
+      "title": "复合绝缘子：电网出海王牌",
+      "summary": "来自“生财佑道”公众号产业分析合集，点击阅读完整文章。",
+      "url": "https://mp.weixin.qq.com/s?__biz=MzAxNDY3MjIxNA==&mid=2456241154&idx=1&sn=73c29b3b3873a651f385862d38297165&chksm=8c1c2c3bbb6ba52d66bd14744c0a809c1f8677eba7984b5bcff5463914df8817c79e7cab8113#rd",
+      "date": "2026-07-23",
+      "dateLabel": "07/23",
+      "category": "产业观察",
+      "readTime": "公众号原文",
+      "cover": "https://mmbiz.qpic.cn/mmbiz_jpg/1pLO8fJcwgABHfdaAgIaxhXiaoaG6Rn8ryuadOTwd5yqEpjSDRKJLfUJJEubbJdxic42kKMEXN9MWXBCh0iaT4EAfND11u39xoO2d7sShR4eHA/300",
+      "order": 91,
       "featured": true
     }
   ]
