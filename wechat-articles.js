@@ -1098,6 +1098,30 @@ window.WECHAT_CONTENT = {
       "readTime": "公众号原文",
       "cover": "https://mmbiz.qpic.cn/mmbiz_jpg/1pLO8fJcwgABHfdaAgIaxhXiaoaG6Rn8ryuadOTwd5yqEpjSDRKJLfUJJEubbJdxic42kKMEXN9MWXBCh0iaT4EAfND11u39xoO2d7sShR4eHA/300",
       "order": 91,
+      "featured": false
+    },
+    {
+      "title": "液冷电缆：兆瓦超充暗战",
+      "summary": "来自“生财佑道”公众号产业分析合集，点击阅读完整文章。",
+      "url": "https://mp.weixin.qq.com/s?__biz=MzAxNDY3MjIxNA==&mid=2456241159&idx=1&sn=46ec97f6ddba3bd4c8224ffc68c40b56&chksm=8c1c2c3ebb6ba52837712aff37ee1938fae539e366e7916e15b8ddfd3061e692e1eb964d0765#rd",
+      "date": "2026-07-24",
+      "dateLabel": "07/24",
+      "category": "产业观察",
+      "readTime": "公众号原文",
+      "cover": "https://mmbiz.qpic.cn/sz_mmbiz_jpg/1pLO8fJcwgDKFDSXibYBEvhXfcWiakuGn8xOT3ZibMloeiac12GWIHzWL2iaWESv7v6McRwNwAwRCEz384oPmtKBJLn0Vry5ia62BQdFcg8xjJl3Y/300",
+      "order": 92,
+      "featured": false
+    },
+    {
+      "title": "谷歌加码：AI电力暗线升温",
+      "summary": "来自“生财佑道”公众号产业分析合集，点击阅读完整文章。",
+      "url": "https://mp.weixin.qq.com/s?__biz=MzAxNDY3MjIxNA==&mid=2456241165&idx=1&sn=4c78f88698fb7a6add1bd2b13b175269&chksm=8c1c2c34bb6ba522ef748f8fc13bed4de92d910fc3269ef130b3e08dca03530533eb2a5a3218#rd",
+      "date": "2026-07-24",
+      "dateLabel": "07/24",
+      "category": "AI 算力",
+      "readTime": "公众号原文",
+      "cover": "https://mmbiz.qpic.cn/mmbiz_jpg/1pLO8fJcwgC6AJZhLEoQEFMeqxib2bZicq3WfhxaIQzBUEofTyxbjokKHsDktzUlRWSib8o11YNlo7WtD6SS3aHaAdOKRw3mZVwC24ZWJo1Mfo/300",
+      "order": 93,
       "featured": true
     }
   ]
