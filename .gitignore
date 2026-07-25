@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 .venv/
+node_modules/
+dist/
+*.tsbuildinfo
 
 # macOS
 .DS_Store

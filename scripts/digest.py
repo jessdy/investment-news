@@ -95,6 +95,7 @@ def main():
     if failed:
         print("\n⚠️  %d 个栏目生成失败:%s" % (len(failed), "、".join(failed)))
         print("   重跑即可只补失败栏(已成功栏自动跳过):python3 scripts/digest.py")
+        raise SystemExit(1)
 
 if __name__ == "__main__":
     main()

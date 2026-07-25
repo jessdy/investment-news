@@ -5,6 +5,9 @@
 !.env.example
 __pycache__/
 *.py[cod]
+.venv/
+node_modules/
+dist/
 .DS_Store
 *.bak
 scripts/_*

@@ -50,24 +50,27 @@
 
 ![dashboard](docs/screenshot.png)
 
-> **本工具的核心交付物是这个浏览器看板。** 运行后，所有操作的终点都是访问 `http://localhost:8793` —— 今日要点、中文翻译、赛道分区、原文跳转，均集中于该页面。
+> **本工具的核心交付物是这个浏览器看板。** 运行后访问 `http://localhost:8793/news` 查看产业资讯，访问 `http://localhost:8793/analysis` 查看产业分析。
 
 ## 🚀 快速开始
 
-**环境要求**：Python 3.7+、MySQL 5.7+/8.0+ 和一个大模型（下方二选一）。
+**环境要求**：Node.js 20+、Python 3.7+、MySQL 5.7+/8.0+ 和一个大模型（下方二选一）。
 
 ```bash
 git clone https://github.com/simonlin1212/investment-news.git
 cd investment-news
 
 # 1) 配置大模型(见下「配置」)，默认使用本机 Claude 订阅，零成本
-# 2) 安装依赖并初始化数据库
+# 2) 安装前后端依赖、构建 React 页面并初始化数据库
+npm install
+npm run build
 python3 -m pip install -r requirements.txt
 python3 scripts/import_mysql.py
 # 3) 启动看板服务
-python3 server.py            # 默认端口 8793，保持运行
-# 4) 在浏览器打开看板
-open http://localhost:8793   # Windows 使用 start，Linux 使用 xdg-open
+./scripts/start.sh           # 默认端口 8793，保持运行
+# 也可指定端口：./scripts/start.sh 8080
+# 4) 在浏览器打开产业资讯（产业分析路由为 /analysis）
+open http://localhost:8793/news   # Windows 使用 start，Linux 使用 xdg-open
 # 5) 服务启动后会自动刷新一次，此后每 6 小时在后台自动更新
 ```
 
@@ -86,7 +89,7 @@ sources.json  (108 个源 / 12 赛道)
      MySQL
        │
        ▼  server.py API       /api/news + /api/wechat-articles
-  index.html：浏览器看板
+  React + HeroUI 看板（Vite 构建至 dist）
 ```
 
 数据访问使用 PyMySQL。`claude-cli` 模式下，`digest` 调用本机 `claude -p`（订阅鉴权、禁用全部工具、仅处理文本），**仅本地可用、零成本**。
@@ -117,7 +120,7 @@ LLM_MODEL="deepseek-chat"
 
 ## 🐳 Docker 运行
 
-Docker 镜像使用 API 模式，通过本地 `.env` 注入配置；`.env` 不会被复制进镜像。
+Docker 使用 Node + Python 多阶段构建：Node 阶段生成 React 生产资源，最终镜像仅保留 Python 后端和 `dist`。运行配置通过本地 `.env` 注入，`.env` 不会被复制进镜像。
 
 ```bash
 # 构建镜像（可选参数为标签，默认 latest）
@@ -132,7 +135,9 @@ docker compose logs -f
 docker compose down
 ```
 
-打开 `http://localhost:8793`。Compose 会读取 `.env`，并使用 Docker 命名卷持久化生成的 `data.js`。容器启动后会立即刷新一次，此后每 6 小时自动更新。可通过 `APP_PORT=8080 docker compose up -d` 修改宿主机端口。
+打开 `http://localhost:8793/news`（产业资讯）或 `http://localhost:8793/analysis`（产业分析）。Compose 会读取 `.env`，并使用 Docker 命名卷持久化生成的 `data.js`。容器启动后会立即刷新一次，此后每 6 小时自动更新。可通过 `APP_PORT=8080 docker compose up -d` 修改宿主机端口。
+
+生产部署时请在 `.env` 设置公开域名，例如 `PUBLIC_BASE_URL=https://news.example.com`。服务会据此生成各路由的 canonical、Open Graph、JSON-LD、`robots.txt` 和 `sitemap.xml`；根路径会永久重定向到 `/news`。
 
 ## 🌐 覆盖赛道与信息源
 
@@ -164,8 +169,11 @@ investment-news/
 ├── Dockerfile          容器镜像定义
 ├── docker-compose.yml  容器启动与运行配置
 ├── .dockerignore       镜像构建忽略规则
-├── index.html          浏览器看板(侧栏 12 赛道 + 今日要点 + 双语列表 + 刷新)
-├── server.py           MySQL API + 静态服务 + 每 6 小时后台自动刷新
+├── index.html          Vite HTML 入口
+├── src/                React + HeroUI 页面、类型与样式
+├── package.json        前端依赖与 Vite 构建命令
+├── vite.config.ts      Vite / Tailwind CSS 配置
+├── server.py           MySQL API + dist 静态服务 + 每 6 小时后台自动刷新
 ├── database.py         MySQL 连接与数据查询
 ├── requirements.txt    Python 依赖
 ├── sources.json        108 源 / 12 赛道 / 合规词(调整源即编辑此文件)
@@ -185,6 +193,7 @@ investment-news/
 ## 🧰 技术栈与依赖
 
 - **Python 3.7+**，数据访问依赖 PyMySQL；抓取与摘要部分仍主要使用标准库。
+- **React 19 + HeroUI 3 + Tailwind CSS 4 + Vite 8**，构建生产看板。
 - **MySQL 5.7+/8.0+**，保存行业资讯、研判要点和公众号文章。
 - **一个大模型**：本机 Claude Code 订阅（`claude-cli`，$0），或任意 OpenAI 兼容 API key。
 - 需联网访问信息源（部分国际源可能需要代理）。
