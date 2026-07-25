@@ -23,7 +23,7 @@
 
 **Investment News 是为 A股投资者打造的全球产业链资讯看板。** 半导体、AI、机器人、新能源车、航天…这 12 大赛道一一对应 A股板块，而真正驱动板块的领先信号，往往先出现在全球英文源里。本工具覆盖全球 100+ 权威信息源，调用你自己的大模型，将各赛道最新动向每日提炼为中文「今日要点」并完成翻译，统一呈现在一个本地浏览器看板中。
 
-区别于信息过载的新闻聚合器，其核心在于**由 AI 完成阅读与提炼**：每个赛道置顶 3–5 条「今日要点」，跨源聚合去重，便于快速把握各赛道全貌，并可下钻至原文核实。抓取过程在**本地**完成（纯 Python 标准库），AI 使用**你自己**的 Claude 订阅（$0）或任意 API key，**数据全程留存本机，无需账号，无托管依赖**。
+区别于信息过载的新闻聚合器，其核心在于**由 AI 完成阅读与提炼**：每个赛道置顶 3–5 条「今日要点」，跨源聚合去重，便于快速把握各赛道全貌，并可下钻至原文核实。抓取过程由 Python 后端完成，AI 使用**你自己**的 Claude 订阅（$0）或任意 API key，结果存入 MySQL 并通过只读 API 提供给看板。
 
 适用场景：
 
@@ -43,7 +43,7 @@
 | **要⁠点⁠溯⁠源** | 每条要点附原文链接，可一键回溯至主要信息来源 |
 | **自⁠动⁠刷⁠新** | 服务启动后自动抓取与摘要，此后每 6 小时后台更新，无需手动操作 |
 | **引⁠擎⁠双⁠选** | 支持本机 Claude 订阅（`claude-cli`，$0）与任意 OpenAI 兼容 API 两种接入，单一配置项切换 |
-| **本⁠地⁠运⁠行** | 抓取与呈现均在本地完成，数据全程留存本机；无数据库、无托管、无 RSSHub |
+| **MySQL 数据源** | 新闻与公众号文章统一存入 MySQL，前端通过 Python 后端 API 实时读取 |
 | **合⁠规⁠过⁠滤** | 内置关键词过滤，自动剔除博彩、预测市场、加密货币、色情类内容；时政、财经正常收录 |
 
 ## 📸 截图 Screenshot
@@ -54,18 +54,21 @@
 
 ## 🚀 快速开始
 
-**环境要求**：Python 3.7+（标准库即可，**无需安装任何第三方包**）+ 一个大模型（下方二选一）。
+**环境要求**：Python 3.7+、MySQL 5.7+/8.0+ 和一个大模型（下方二选一）。
 
 ```bash
 git clone https://github.com/simonlin1212/investment-news.git
 cd investment-news
 
 # 1) 配置大模型(见下「配置」)，默认使用本机 Claude 订阅，零成本
-# 2) 启动看板服务
+# 2) 安装依赖并初始化数据库
+python3 -m pip install -r requirements.txt
+python3 scripts/import_mysql.py
+# 3) 启动看板服务
 python3 server.py            # 默认端口 8793，保持运行
-# 3) 在浏览器打开看板
+# 4) 在浏览器打开看板
 open http://localhost:8793   # Windows 使用 start，Linux 使用 xdg-open
-# 4) 服务启动后会自动刷新一次，此后每 6 小时在后台自动更新
+# 5) 服务启动后会自动刷新一次，此后每 6 小时在后台自动更新
 ```
 
 ## ⚙️ 工作原理
@@ -77,13 +80,16 @@ sources.json  (108 个源 / 12 赛道)
   data.js  (原始条目)
        │
        ▼  scripts/digest.py   调用你的大模型 → 各赛道「今日要点」+ 中文翻译 + 溯源链接
-  data.js  (含 AI 要点)
+  data.js  (含 AI 要点，刷新过程的中间文件)
        │
-       ▼  index.html          浏览器看板(单文件、零构建、零依赖)
-  server.py：本地服务 + 每 6 小时后台自动刷新
+       ▼  scripts/import_mysql.py
+     MySQL
+       │
+       ▼  server.py API       /api/news + /api/wechat-articles
+  index.html：浏览器看板
 ```
 
-全流程基于**纯 Python 标准库 + 一个大模型**，无数据库、无 RSSHub、无托管服务。`claude-cli` 模式下，`digest` 调用本机 `claude -p`（订阅鉴权、禁用全部工具、仅处理文本），**仅本地可用、零成本**。
+数据访问使用 PyMySQL。`claude-cli` 模式下，`digest` 调用本机 `claude -p`（订阅鉴权、禁用全部工具、仅处理文本），**仅本地可用、零成本**。
 
 ## 🤖 配置大模型（订阅 / API 二选一）
 
@@ -159,7 +165,9 @@ investment-news/
 ├── docker-compose.yml  容器启动与运行配置
 ├── .dockerignore       镜像构建忽略规则
 ├── index.html          浏览器看板(侧栏 12 赛道 + 今日要点 + 双语列表 + 刷新)
-├── server.py           本地服务 + 每 6 小时后台自动刷新
+├── server.py           MySQL API + 静态服务 + 每 6 小时后台自动刷新
+├── database.py         MySQL 连接与数据查询
+├── requirements.txt    Python 依赖
 ├── sources.json        108 源 / 12 赛道 / 合规词(调整源即编辑此文件)
 ├── .env                本地大模型配置与密钥(Git 忽略)
 ├── llm.config.json     环境变量映射(不含密钥)
@@ -167,6 +175,7 @@ investment-news/
 ├── scripts/
 │   ├── fetch.py        抓取 + 合规过滤 + 时间窗口(纯标准库)
 │   ├── digest.py       调用大模型生成「今日要点」与翻译
+│   ├── import_mysql.py 创建表并将 JS 数据导入 MySQL
 │   ├── llm.py          统一大模型入口(claude-cli / api 双 provider)
 │   ├── docker-build.sh Docker 镜像一键构建脚本
 │   └── build_sources.py 重建并校验 sources.json(逐源 liveness 实测)
@@ -175,13 +184,14 @@ investment-news/
 
 ## 🧰 技术栈与依赖
 
-- **Python 3.7+**，**纯标准库**（urllib / json / xml.etree / http.server / subprocess）—— 抓取与看板零第三方依赖。
+- **Python 3.7+**，数据访问依赖 PyMySQL；抓取与摘要部分仍主要使用标准库。
+- **MySQL 5.7+/8.0+**，保存行业资讯、研判要点和公众号文章。
 - **一个大模型**：本机 Claude Code 订阅（`claude-cli`，$0），或任意 OpenAI 兼容 API key。
 - 需联网访问信息源（部分国际源可能需要代理）。
 
 ## ⚖️ 使用边界 / 免责声明
 
-- **仅本地运行**：不含任何托管、上传或服务端，数据仅留存于本机。
+- 数据库凭据仅通过未纳入 Git 的 `.env` 或运行环境变量提供，禁止写入前端代码。
 - **仅读取公开 RSS / 接口**，保持低频访问，并遵守各信息源的服务条款。
 - **结论仅供参考**：本工具属**资讯聚合**，所呈现的是行业动向与领先信号，**不构成任何投资建议**；据此决策的后果由使用者自行承担。
 

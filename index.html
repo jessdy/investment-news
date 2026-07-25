@@ -303,9 +303,9 @@
 </div>
 
 <script>
-function boot(){
-  var D=window.DATA||{industries:[]}, inds=D.industries||[], active=inds.length?inds[0].key:null, currentView='news';
-  var W=window.WECHAT_CONTENT||{accountName:'硅基世纪',articles:[]};
+function boot(D,W){
+  D=D||{industries:[]};W=W||{accountName:'硅基世纪',articles:[]};
+  var inds=D.industries||[], active=inds.length?inds[0].key:null, currentView='news';
   var main=document.getElementById('main'), sectorNav=document.getElementById('sectorNav');
   function esc(s){return (''+(s||'')).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]})}
   function safeUrl(u){u=(''+(u||'')).trim();return /^https?:\/\//i.test(u)?esc(u):''}
@@ -375,10 +375,18 @@ function boot(){
 
   if(active)renderNews(inds[0]);else main.innerHTML='<div class="empty">暂无产业数据</div>';
 }
-var wechatScript=document.createElement('script');wechatScript.src='wechat-articles.js?t='+Date.now();
-wechatScript.onload=loadNewsData;wechatScript.onerror=loadNewsData;document.head.appendChild(wechatScript);
-function loadNewsData(){var dataScript=document.createElement('script');dataScript.src='data.js?t='+Date.now();dataScript.onload=boot;
-dataScript.onerror=function(){document.getElementById('main').innerHTML='<div class="empty">产业数据加载失败</div>'};document.head.appendChild(dataScript)}
+function fetchJson(url){
+  return fetch(url,{cache:'no-store'}).then(function(response){
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    return response.json();
+  });
+}
+Promise.all([fetchJson('/api/news'),fetchJson('/api/wechat-articles')])
+  .then(function(payloads){boot(payloads[0],payloads[1])})
+  .catch(function(error){
+    console.error('数据加载失败',error);
+    document.getElementById('main').innerHTML='<div class="empty">数据库数据加载失败，请稍后重试</div>';
+  });
 </script>
 </body>
 </html>

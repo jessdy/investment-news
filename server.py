@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""server.py —— 本地看板服务 + 六小时后台自动刷新(纯标准库)。
-- 静态服务整个 investment-news 目录(看板、data、脚本)
+"""server.py —— 本地看板服务 + 六小时后台自动刷新。
+- 静态服务整个 investment-news 目录，并通过 API 从 MySQL 提供看板数据
 - 服务启动后自动执行 scripts/fetch.py + scripts/digest.py,之后每 6 小时执行一次。
 - POST /api/refresh 已禁用;GET /api/refresh-status 可查看后台任务状态。
 跑法: python3 server.py [port]   默认 8793
@@ -10,11 +10,14 @@ import os, sys, json, shutil, subprocess, threading
 from datetime import datetime
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
+from database import read_news_data, read_wechat_content
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOST = os.environ.get("HOST", "127.0.0.1")
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", "8793"))
 DEFAULT_DATA_FILE = os.path.join(HERE, "data.js")
 DATA_FILE = os.path.abspath(os.environ.get("DATA_FILE", DEFAULT_DATA_FILE))
+AUTO_REFRESH = os.environ.get("AUTO_REFRESH", "true").lower() not in ("0", "false", "no")
 REFRESH_INTERVAL = 6 * 60 * 60
 REFRESH_LOCK = threading.Lock()
 REFRESH_STATE = {
@@ -57,10 +60,17 @@ def run_refresh():
                                 capture_output=True, text=True, timeout=600)
             r2 = subprocess.run([py, "scripts/digest.py"], cwd=HERE, env=env,
                                 capture_output=True, text=True, timeout=1200)
-            ok = (r2.returncode == 0 and r1.returncode == 0)
-            payload = {"ok": ok, "fetch": (r1.stdout or "")[-500:], "digest": (r2.stdout or "")[-500:]}
+            r3 = subprocess.run([py, "scripts/import_mysql.py"], cwd=HERE, env=env,
+                                capture_output=True, text=True, timeout=180)
+            ok = (r1.returncode == 0 and r2.returncode == 0 and r3.returncode == 0)
+            payload = {
+                "ok": ok,
+                "fetch": (r1.stdout or "")[-500:],
+                "digest": (r2.stdout or "")[-500:],
+                "database": (r3.stdout or "")[-500:],
+            }
             if not ok:
-                payload["error"] = ((r2.stderr or "") + (r1.stderr or ""))[-500:]
+                payload["error"] = ((r3.stderr or "") + (r2.stderr or "") + (r1.stderr or ""))[-500:]
             if not ok:
                 print("自动刷新失败:", payload.get("error", "未知错误"))
         except Exception as e:
@@ -98,6 +108,7 @@ class Handler(SimpleHTTPRequestHandler):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -121,9 +132,22 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_error(404)
 
     def do_GET(self):
-        if self.path.startswith("/api/refresh-status"):
+        path = self.path.split("?", 1)[0]
+        if path == "/api/news":
+            try:
+                return self._json(read_news_data())
+            except Exception as error:
+                print("读取 MySQL 资讯数据失败:", error)
+                return self._json({"ok": False, "error": "产业数据暂时不可用"}, 503)
+        if path == "/api/wechat-articles":
+            try:
+                return self._json(read_wechat_content())
+            except Exception as error:
+                print("读取 MySQL 公众号数据失败:", error)
+                return self._json({"ok": False, "error": "公众号数据暂时不可用"}, 503)
+        if path == "/api/refresh-status":
             return self._json(dict(REFRESH_STATE, interval_hours=6))
-        if self.path.split("?", 1)[0] == "/data.js" and DATA_FILE != DEFAULT_DATA_FILE:
+        if path == "/data.js" and DATA_FILE != DEFAULT_DATA_FILE:
             return self._data_js()
         return super().do_GET()
 
@@ -132,7 +156,10 @@ if __name__ == "__main__":
     ensure_data_file()
     display_host = "localhost" if HOST in ("0.0.0.0", "127.0.0.1") else HOST
     print("看板服务已启动: http://%s:%d/index.html   (Ctrl+C 停止)" % (display_host, PORT))
-    print("数据刷新策略:启动后自动刷新,之后每 6 小时刷新一次(不支持手动刷新)")
-    threading.Thread(target=refresh_loop, name="auto-refresh", daemon=True).start()
+    if AUTO_REFRESH:
+        print("数据刷新策略:启动后自动刷新,之后每 6 小时刷新一次(不支持手动刷新)")
+        threading.Thread(target=refresh_loop, name="auto-refresh", daemon=True).start()
+    else:
+        print("数据自动刷新已关闭")
     # 本机默认只绑定回环地址；容器通过 HOST=0.0.0.0 显式开放监听。
     ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()

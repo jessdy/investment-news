@@ -10,6 +10,8 @@ RUN groupadd --system app && \
     useradd --system --gid app --home-dir /app --create-home app
 
 WORKDIR /app
+COPY --chown=app:app requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 COPY --chown=app:app . .
 RUN mkdir -p /app/runtime && chown app:app /app/runtime
 
