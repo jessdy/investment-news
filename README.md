@@ -109,6 +109,7 @@ AkShare 采集的精确跟踪标的写入 `etf_index_snapshots`，基金与指�
 ```bash
 python3 scripts/fetch_etf_shares.py --dry-run
 python3 scripts/fetch_etf_shares.py
+python3 scripts/fetch_etf_shares.py --backfill-before 2026-07-13 --days 30
 python3 scripts/fetch_etf_indices.py --dry-run
 python3 scripts/fetch_etf_indices.py
 ```

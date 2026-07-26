@@ -432,6 +432,42 @@ def save_data(rankings, snapshots):
             raise
 
 
+def save_snapshots(snapshots):
+    from database import connect
+
+    with connect() as connection:
+        try:
+            with connection.cursor() as cursor:
+                create_schema(cursor)
+                cursor.executemany(
+                    """
+                    INSERT INTO etf_share_snapshots
+                        (trade_date, fund_code, fund_name,
+                         fund_expansion_abbr, etf_type, total_shares,
+                         total_shares_10k, source_url)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                        fund_name = VALUES(fund_name),
+                        fund_expansion_abbr = VALUES(fund_expansion_abbr),
+                        etf_type = VALUES(etf_type),
+                        total_shares = VALUES(total_shares),
+                        total_shares_10k = VALUES(total_shares_10k),
+                        source_url = VALUES(source_url),
+                        fetched_at = CURRENT_TIMESTAMP
+                    """,
+                    [(
+                        row["trade_date"], row["fund_code"],
+                        row["fund_name"], row["fund_expansion_abbr"],
+                        row["etf_type"], row["total_shares"],
+                        row["total_shares_10k"], row["source_url"],
+                    ) for row in snapshots],
+                )
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+
+
 def serializable(rankings, snapshots):
     ranking_rows = []
     by_code = {}
@@ -463,9 +499,43 @@ def main():
         action="store_true",
         help="仅抓取并输出 JSON，不写入 MySQL",
     )
+    parser.add_argument(
+        "--backfill-before",
+        default="",
+        help="补录该日期之前的历史份额（YYYY-MM-DD，不含该日）",
+    )
+    parser.add_argument(
+        "--days",
+        type=int,
+        default=30,
+        help="补录交易日数量，默认 30",
+    )
     args = parser.parse_args()
     if args.top < 1 or args.top > 100:
         parser.error("--top 必须在 1 到 100 之间")
+    if args.days < 1 or args.days > 250:
+        parser.error("--days 必须在 1 到 250 之间")
+    if args.backfill_before:
+        try:
+            datetime.strptime(args.backfill_before, "%Y-%m-%d")
+        except ValueError:
+            parser.error("--backfill-before 必须为 YYYY-MM-DD")
+        funds = load_latest_ranked_funds()
+        snapshots = collect_backfill(
+            funds,
+            args.backfill_before,
+            args.days,
+        )
+        if args.dry_run:
+            print(json.dumps(snapshots, ensure_ascii=False, indent=2))
+            return
+        save_snapshots(snapshots)
+        dates = sorted({row["trade_date"] for row in snapshots})
+        print(
+            "ETF 历史份额补录完成：%s 至 %s，%d 个交易日，%d 条"
+            % (dates[0], dates[-1], len(dates), len(snapshots))
+        )
+        return
 
     rankings, snapshots = collect_top_etfs(args.top)
     if args.dry_run:
