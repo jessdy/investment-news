@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        PIP_INDEX_URL: "${PIP_INDEX_URL:-https://mirrors.aliyun.com/pypi/simple}"
     image: "${IMAGE_NAME:-investment-news}:${IMAGE_TAG:-latest}"
     env_file:
       - .env
