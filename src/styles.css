@@ -252,6 +252,14 @@ a {
   display: block;
 }
 
+.workspace.analysis-mode > .main {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 .sidebar {
   display: flex;
   flex-direction: column;
