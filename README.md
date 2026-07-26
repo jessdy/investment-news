@@ -44,17 +44,18 @@
 | **自⁠动⁠刷⁠新** | 服务启动后自动抓取与摘要，此后每 6 小时后台更新，无需手动操作 |
 | **引⁠擎⁠双⁠选** | 支持本机 Claude 订阅（`claude-cli`，$0）与任意 OpenAI 兼容 API 两种接入，单一配置项切换 |
 | **MySQL 数据源** | 新闻与公众号文章统一存入 MySQL，前端通过 Python 后端 API 实时读取 |
+| **ETF 规模趋势** | 展示上交所规模前十 ETF、每日份额变化，并通过 AkShare 同步对比各自精确跟踪指数 |
 | **合⁠规⁠过⁠滤** | 内置关键词过滤，自动剔除博彩、预测市场、加密货币、色情类内容；时政、财经正常收录 |
 
 ## 📸 截图 Screenshot
 
 ![dashboard](docs/screenshot.png)
 
-> **本工具的核心交付物是这个浏览器看板。** 运行后访问 `http://localhost:8793/news` 查看产业资讯，访问 `http://localhost:8793/analysis` 查看产业分析。
+> **本工具的核心交付物是这个浏览器看板。** 运行后访问 `/news` 查看产业资讯、`/analysis` 查看产业分析、`/funds` 查看基金规模与指数趋势。
 
 ## 🚀 快速开始
 
-**环境要求**：Node.js 20+、Python 3.7+、MySQL 5.7+/8.0+ 和一个大模型（下方二选一）。
+**环境要求**：Node.js 20+、Python 3.10+、MySQL 5.7+/8.0+ 和一个大模型（下方二选一）。
 
 ```bash
 git clone https://github.com/simonlin1212/investment-news.git
@@ -69,7 +70,7 @@ python3 scripts/import_mysql.py
 # 3) 启动看板服务
 ./scripts/start.sh           # 默认端口 8793，保持运行
 # 也可指定端口：./scripts/start.sh 8080
-# 4) 在浏览器打开产业资讯（产业分析路由为 /analysis）
+# 4) 在浏览器打开产业资讯（基金看板路由为 /funds）
 open http://localhost:8793/news   # Windows 使用 start，Linux 使用 xdg-open
 # 5) 服务启动后会自动刷新一次，此后每 6 小时在后台自动更新
 ```
@@ -88,8 +89,28 @@ sources.json  (108 个源 / 12 赛道)
        ▼  scripts/import_mysql.py
      MySQL
        │
-       ▼  server.py API       /api/news + /api/wechat-articles
+       ▼  server.py API       /api/news + /api/wechat-articles + /api/etf-shares
   React + HeroUI 看板（Vite 构建至 dist）
+```
+
+上交所 ETF 份额任务随六小时刷新一并运行，以最新收盘价乘以上交所
+`TOT_VOL`（总份额）估算场内总金额，选出金额最大的 10 只 ETF。
+金额排名写入 `etf_fund_rankings`，逐日总份额写入 `etf_share_snapshots`。
+AkShare 采集的精确跟踪标的写入 `etf_index_snapshots`，基金与指数映射保存在
+`etf_benchmark_mappings`；无法精确获取的指数不会用近似数据替代。重复运行只会
+幂等更新已有记录。
+
+`GET /api/etf-shares` 默认返回最近 30 个交易日，可使用
+`start_date=YYYY-MM-DD&end_date=YYYY-MM-DD` 自选区间，最多 90 个交易日。
+份额缺失日返回 `null`，前端保留折线断点。
+
+也可以单独执行或补录指定交易日：
+
+```bash
+python3 scripts/fetch_etf_shares.py --dry-run
+python3 scripts/fetch_etf_shares.py
+python3 scripts/fetch_etf_indices.py --dry-run
+python3 scripts/fetch_etf_indices.py
 ```
 
 数据访问使用 PyMySQL。`claude-cli` 模式下，`digest` 调用本机 `claude -p`（订阅鉴权、禁用全部工具、仅处理文本），**仅本地可用、零成本**。
@@ -135,7 +156,7 @@ docker compose logs -f
 docker compose down
 ```
 
-打开 `http://localhost:8793/news`（产业资讯）或 `http://localhost:8793/analysis`（产业分析）。Compose 会读取 `.env`，并使用 Docker 命名卷持久化生成的 `data.js`。容器启动后会立即刷新一次，此后每 6 小时自动更新。可通过 `APP_PORT=8080 docker compose up -d` 修改宿主机端口。
+打开 `http://localhost:8793/news`（产业资讯）、`http://localhost:8793/analysis`（产业分析）或 `http://localhost:8793/funds`（基金规模）。Compose 会读取 `.env`，并使用 Docker 命名卷持久化生成的 `data.js`。容器启动后会立即刷新一次，此后每 6 小时自动更新。可通过 `APP_PORT=8080 docker compose up -d` 修改宿主机端口。
 
 生产部署时请在 `.env` 设置公开域名，例如 `PUBLIC_BASE_URL=https://news.example.com`。服务会据此生成各路由的 canonical、Open Graph、JSON-LD、`robots.txt` 和 `sitemap.xml`；根路径会永久重定向到 `/news`。
 
@@ -182,6 +203,8 @@ investment-news/
 ├── data.js             生成的数据(fetch + digest 产出)
 ├── scripts/
 │   ├── fetch.py        抓取 + 合规过滤 + 时间窗口(纯标准库)
+│   ├── fetch_etf_shares.py 获取上交所 ETF 总金额前 10 名及最近 10 天份额
+│   ├── fetch_etf_indices.py 使用 AkShare 采集基金精确跟踪指数历史
 │   ├── digest.py       调用大模型生成「今日要点」与翻译
 │   ├── import_mysql.py 创建表并将 JS 数据导入 MySQL
 │   ├── llm.py          统一大模型入口(claude-cli / api 双 provider)

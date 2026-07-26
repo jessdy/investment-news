@@ -63,4 +63,47 @@ export interface RefreshStatus {
   last_ok: boolean | null;
   error: string;
   interval_hours: number;
+  funds_last_ok?: boolean | null;
+  funds_error?: string;
+}
+
+export interface EtfTrendPoint {
+  date: string;
+  total_shares: string | null;
+  total_shares_10k: string | null;
+  index_close: string | null;
+}
+
+export interface EtfBenchmark {
+  code: string;
+  name: string;
+  supported: boolean;
+  note: string;
+}
+
+export interface EtfFundItem {
+  date: string;
+  fund_code: string;
+  fund_name: string;
+  fund_expansion_abbr: string;
+  etf_type: string;
+  rank: number;
+  closing_price: string;
+  total_shares: string;
+  estimated_total_amount: string;
+  source_url: string;
+  fetched_at: string;
+  benchmark: EtfBenchmark;
+  history: EtfTrendPoint[];
+}
+
+export interface EtfDashboard {
+  latest_date: string;
+  range: {
+    start_date: string;
+    end_date: string;
+    trading_days: number;
+    max_trading_days: number;
+  };
+  items: EtfFundItem[];
 }

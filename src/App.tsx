@@ -7,7 +7,7 @@ import {
   Modal,
   Spinner,
 } from "@heroui/react";
-import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
 
 import {fetchDashboard, fetchRefreshStatus} from "./api";
@@ -19,7 +19,9 @@ import type {
   WechatContent,
 } from "./types";
 
-type View = "news" | "analysis";
+type View = "news" | "analysis" | "funds";
+
+const FundView = lazy(() => import("./FundView"));
 
 const ROUTE_SEO: Record<View, {title: string; description: string}> = {
   news: {
@@ -31,6 +33,11 @@ const ROUTE_SEO: Record<View, {title: string; description: string}> = {
     title: "产业分析｜AI、机器人与科技趋势深度研究 - 生财佑道",
     description:
       "生财佑道原创产业分析，深度解读人工智能、机器人、科技创新与商业趋势，提供长期产业研究视角。",
+  },
+  funds: {
+    title: "基金规模排行｜ETF 份额与跟踪指数趋势 - 生财佑道",
+    description:
+      "展示上交所规模前十 ETF 排行、每日基金份额变化，并同步对比各基金精确跟踪指数的同周期趋势。",
   },
 };
 
@@ -165,6 +172,13 @@ function Header({view, updateLabel, onViewChange}: HeaderProps) {
             onPress={() => onViewChange("analysis")}
           >
             产业分析
+          </Button>
+          <Button
+            className={view === "funds" ? "active" : ""}
+            variant="ghost"
+            onPress={() => onViewChange("funds")}
+          >
+            基金规模
           </Button>
         </nav>
         <div className="top-actions">
@@ -478,8 +492,16 @@ export default function App() {
   const [error, setError] = useState("");
   const [updateLabel, setUpdateLabel] = useState("数据准备中");
   const observedRefresh = useRef(sessionStorage.getItem("refresh-finished") || "");
-  const view: View = location.pathname === "/analysis" ? "analysis" : "news";
+  const view: View =
+    location.pathname === "/analysis"
+      ? "analysis"
+      : location.pathname === "/funds"
+        ? "funds"
+        : "news";
   useRouteSeo(view);
+  const handleFundDate = useCallback((date: string) => {
+    setUpdateLabel(`基金更新于 ${date || "—"}`);
+  }, []);
 
   const loadDashboard = useCallback(async (signal?: AbortSignal) => {
     const [newsData, wechatData] = await fetchDashboard(signal);
@@ -490,6 +512,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (view === "funds" || data) return;
     const controller = new AbortController();
     loadDashboard(controller.signal).catch((loadError: unknown) => {
       if (!controller.signal.aborted) {
@@ -497,22 +520,29 @@ export default function App() {
       }
     });
     return () => controller.abort();
-  }, [loadDashboard]);
+  }, [data, loadDashboard, view]);
 
   useEffect(() => {
-    if (!data) return;
+    if (view !== "funds" && !data) return;
     let disposed = false;
     const checkStatus = async () => {
       try {
         const status = await fetchRefreshStatus();
         if (disposed) return;
         if (status.running) setUpdateLabel("后台正在更新数据…");
-        else if (status.last_ok === false) setUpdateLabel("上次自动更新失败");
-        else setUpdateLabel(`更新于 ${data.generated_at || "—"}`);
+        else if (view === "funds" && status.funds_last_ok === false) {
+          setUpdateLabel("上次基金更新失败");
+        } else if (view !== "funds" && status.last_ok === false) {
+          setUpdateLabel("上次自动更新失败");
+        } else if (view !== "funds") {
+          setUpdateLabel(`更新于 ${data?.generated_at || "—"}`);
+        }
         if (status.last_finished && status.last_finished !== observedRefresh.current) {
           observedRefresh.current = status.last_finished;
           sessionStorage.setItem("refresh-finished", status.last_finished);
-          if (status.last_ok) window.location.reload();
+          if (view === "funds" ? status.funds_last_ok : status.last_ok) {
+            window.location.reload();
+          }
         }
       } catch {
         // 状态接口不可用时保留最近一次更新时间。
@@ -524,33 +554,11 @@ export default function App() {
       disposed = true;
       window.clearInterval(timer);
     };
-  }, [data]);
+  }, [data, view]);
 
   const activeIndustry =
     data?.industries.find((industry) => industry.key === activeKey) ??
     data?.industries[0];
-
-  if (error) {
-    return (
-      <main className="state-page">
-        <Alert status="danger">
-          <Alert.Content>
-            <Alert.Title>产业数据加载失败</Alert.Title>
-            <Alert.Description>{error}，请稍后重试。</Alert.Description>
-          </Alert.Content>
-        </Alert>
-      </main>
-    );
-  }
-
-  if (!data) {
-    return (
-      <main className="state-page loading-state">
-        <Spinner size="lg" color="accent" />
-        <span>正在载入产业数据…</span>
-      </main>
-    );
-  }
 
   return (
     <div className="app-shell">
@@ -559,8 +567,8 @@ export default function App() {
         updateLabel={updateLabel}
         onViewChange={(nextView) => navigate(`/${nextView}`)}
       />
-      <div className={`workspace ${view === "analysis" ? "analysis-mode" : ""}`}>
-        {view === "news" && (
+      <div className={`workspace ${view !== "news" ? "analysis-mode" : ""}`}>
+        {view === "news" && data && (
           <Sidebar
             data={data}
             activeKey={activeIndustry?.key || ""}
@@ -568,7 +576,25 @@ export default function App() {
           />
         )}
         <main className="main">
-          {view === "news" && activeIndustry ? (
+          {view === "funds" ? (
+            <Suspense fallback={<div className="state-page loading-state"><Spinner size="lg" color="accent" /><span>正在载入基金看板…</span></div>}>
+              <FundView onDataDate={handleFundDate} />
+            </Suspense>
+          ) : error ? (
+            <div className="state-page">
+              <Alert status="danger">
+                <Alert.Content>
+                  <Alert.Title>产业数据加载失败</Alert.Title>
+                  <Alert.Description>{error}，请稍后重试。</Alert.Description>
+                </Alert.Content>
+              </Alert>
+            </div>
+          ) : !data ? (
+            <div className="state-page loading-state">
+              <Spinner size="lg" color="accent" />
+              <span>正在载入产业数据…</span>
+            </div>
+          ) : view === "news" && activeIndustry ? (
             <NewsView data={data} industry={activeIndustry} />
           ) : (
             <AnalysisView wechat={wechat} />

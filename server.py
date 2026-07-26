@@ -10,8 +10,9 @@ import os, sys, json, shutil, subprocess, threading, re
 from datetime import datetime
 from html import escape
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlsplit
 
-from database import read_news_data, read_wechat_content
+from database import read_etf_share_data, read_news_data, read_wechat_content
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOST = os.environ.get("HOST", "127.0.0.1")
@@ -29,6 +30,8 @@ REFRESH_STATE = {
     "last_finished": None,
     "last_ok": None,
     "error": "",
+    "funds_last_ok": None,
+    "funds_error": "",
 }
 
 SEO_PAGES = {
@@ -43,6 +46,12 @@ SEO_PAGES = {
         "description": "生财佑道原创产业分析，深度解读人工智能、机器人、科技创新与商业趋势，提供长期产业研究视角。",
         "heading": "产业分析与科技趋势深度研究",
         "keywords": "产业分析,行业研究,人工智能,机器人,科技趋势,商业分析,生财佑道",
+    },
+    "/funds": {
+        "title": "基金规模排行｜ETF 份额与跟踪指数趋势 - 生财佑道",
+        "description": "展示上交所规模前十 ETF 排行、每日基金份额变化，并同步对比各基金精确跟踪指数的同周期趋势。",
+        "heading": "上交所 ETF 规模排行与份额趋势",
+        "keywords": "ETF规模排行,基金份额,ETF趋势,跟踪指数,基金规模,沪深300ETF",
     },
 }
 
@@ -82,20 +91,51 @@ def run_refresh():
             if r1.returncode == 0 and r2.returncode == 0:
                 r3 = subprocess.run([py, "scripts/import_mysql.py"], cwd=HERE, env=env,
                                     capture_output=True, text=True, timeout=180)
-            ok = bool(r3 is not None and r3.returncode == 0)
+            r4 = subprocess.run(
+                [py, "scripts/fetch_etf_shares.py"],
+                cwd=HERE,
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=180,
+            )
+            r5 = None
+            if r4.returncode == 0:
+                r5 = subprocess.run(
+                    [py, "scripts/fetch_etf_indices.py"],
+                    cwd=HERE,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    timeout=300,
+                )
+            news_ok = bool(r3 is not None and r3.returncode == 0)
+            funds_ok = bool(r4.returncode == 0 and r5 is not None and r5.returncode == 0)
             payload = {
-                "ok": ok,
+                "ok": news_ok,
+                "funds_ok": funds_ok,
                 "fetch": (r1.stdout or "")[-500:],
                 "digest": (r2.stdout or "")[-500:],
                 "database": (r3.stdout or "")[-500:] if r3 else "摘要不完整，已保留数据库上一版数据",
+                "etf": (r4.stdout or "")[-500:],
+                "index": (r5.stdout or "")[-500:] if r5 else "ETF 排名失败，未刷新跟踪指数",
             }
-            if not ok:
+            if not news_ok:
                 errors = (r1.stderr or "") + (r2.stderr or "")
                 if r3:
                     errors += r3.stderr or ""
                 payload["error"] = errors[-500:] or payload["database"]
-            if not ok:
+            if not funds_ok:
+                fund_errors = (r4.stderr or "")
+                if r5:
+                    fund_errors += r5.stderr or ""
+                payload["funds_error"] = (
+                    fund_errors[-500:] or payload["index"]
+                )
+            if not news_ok:
                 print("自动刷新失败:", payload.get("error", "未知错误"))
+            if not funds_ok:
+                print("基金数据刷新失败:", payload.get("funds_error", "未知错误"))
         except Exception as e:
             payload = {"ok": False, "error": str(e)}
             print("自动刷新异常:", e)
@@ -104,6 +144,8 @@ def run_refresh():
             last_finished=datetime.now().isoformat(timespec="seconds"),
             last_ok=bool(payload.get("ok")),
             error=payload.get("error", ""),
+            funds_last_ok=bool(payload.get("funds_ok")),
+            funds_error=payload.get("funds_error", ""),
         )
         return payload
     finally:
@@ -173,7 +215,7 @@ class Handler(SimpleHTTPRequestHandler):
                         "url": item.get("url") or "",
                         "description": item.get("summary") or "",
                     })
-        else:
+        elif path == "/analysis":
             data = read_wechat_content()
             last_modified = data.get("importedAt", "")
             for article in data.get("articles", [])[:20]:
@@ -181,6 +223,24 @@ class Handler(SimpleHTTPRequestHandler):
                     "name": article.get("title") or "产业分析",
                     "url": article.get("url") or "",
                     "description": article.get("summary") or "",
+                })
+        else:
+            data = read_etf_share_data()
+            last_modified = data.get("latest_date", "")
+            for fund in data.get("items", []):
+                amount = float(fund.get("estimated_total_amount") or 0) / 100000000
+                benchmark = fund.get("benchmark") or {}
+                entries.append({
+                    "name": "%s（%s）" % (
+                        fund.get("fund_expansion_abbr") or fund.get("fund_name") or "ETF",
+                        fund.get("fund_code") or "",
+                    ),
+                    "url": fund.get("source_url") or "",
+                    "description": "规模排名第 %s，估算规模 %.2f 亿元，跟踪%s。" % (
+                        fund.get("rank") or "—",
+                        amount,
+                        benchmark.get("name") or "指数暂不可用",
+                    ),
                 })
         return entries[:30], last_modified
 
@@ -277,7 +337,8 @@ class Handler(SimpleHTTPRequestHandler):
         body = page.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Cache-Control", "public, max-age=300")
+        # HTML 引用带哈希的构建资源，必须每次校验，避免部署后缓存旧资源名。
+        self.send_header("Cache-Control", "no-cache")
         if last_modified:
             self.send_header("X-Content-Updated-At", str(last_modified))
         self.send_header("Content-Length", str(len(body)))
@@ -297,8 +358,9 @@ class Handler(SimpleHTTPRequestHandler):
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
             '<url><loc>%s/news</loc><changefreq>daily</changefreq><priority>1.0</priority></url>'
             '<url><loc>%s/analysis</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>'
+            '<url><loc>%s/funds</loc><changefreq>daily</changefreq><priority>0.9</priority></url>'
             '</urlset>'
-        ) % (base_url, base_url)
+        ) % (base_url, base_url, base_url)
         payload = body.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/xml; charset=utf-8")
@@ -321,10 +383,12 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_error(404)
 
     def do_GET(self):
-        path = self.path.split("?", 1)[0]
+        parsed = urlsplit(self.path)
+        path = parsed.path
+        query = parse_qs(parsed.query)
         if path in ("/", "/index.html"):
             return self._redirect("/news")
-        if path in ("/news/", "/analysis/"):
+        if path in ("/news/", "/analysis/", "/funds/"):
             return self._redirect(path.rstrip("/"))
         if path in SEO_PAGES:
             return self._spa_html(path)
@@ -344,6 +408,17 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as error:
                 print("读取 MySQL 公众号数据失败:", error)
                 return self._json({"ok": False, "error": "公众号数据暂时不可用"}, 503)
+        if path == "/api/etf-shares":
+            try:
+                return self._json(read_etf_share_data(
+                    start_date=(query.get("start_date") or [None])[0],
+                    end_date=(query.get("end_date") or [None])[0],
+                ))
+            except ValueError as error:
+                return self._json({"ok": False, "error": str(error)}, 400)
+            except Exception as error:
+                print("读取 MySQL ETF 份额数据失败:", error)
+                return self._json({"ok": False, "error": "ETF 份额数据暂时不可用"}, 503)
         if path == "/api/refresh-status":
             return self._json(dict(REFRESH_STATE, interval_hours=6))
         if path == "/data.js" and DATA_FILE != DEFAULT_DATA_FILE:

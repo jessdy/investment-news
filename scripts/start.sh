@@ -16,7 +16,7 @@ else
   exit 1
 fi
 
-if ! "$PYTHON" -c "import pymysql" >/dev/null 2>&1; then
+if ! "$PYTHON" -c "import pymysql, akshare" >/dev/null 2>&1; then
   echo "错误：缺少 Python 依赖，请先执行：" >&2
   echo "  $PYTHON -m pip install -r requirements.txt" >&2
   exit 1
@@ -34,6 +34,6 @@ if [[ ! -f ".env" ]]; then
 fi
 
 echo "正在启动生财佑道后端：http://${HOST}:${PORT}/news"
-echo "页面：/news · /analysis · /sitemap.xml"
-echo "接口：/api/news · /api/wechat-articles · /api/refresh-status"
+echo "页面：/news · /analysis · /funds · /sitemap.xml"
+echo "接口：/api/news · /api/wechat-articles · /api/etf-shares · /api/refresh-status"
 exec env HOST="$HOST" PORT="$PORT" "$PYTHON" server.py

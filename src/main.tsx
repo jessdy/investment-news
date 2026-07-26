@@ -12,6 +12,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/" element={<Navigate to="/news" replace />} />
         <Route path="/news" element={<App />} />
         <Route path="/analysis" element={<App />} />
+        <Route path="/funds" element={<App />} />
         <Route path="*" element={<Navigate to="/news" replace />} />
       </Routes>
     </BrowserRouter>

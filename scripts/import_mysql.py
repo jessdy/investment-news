@@ -82,6 +82,38 @@ CREATE TABLE IF NOT EXISTS wechat_articles (
     featured TINYINT(1) NOT NULL DEFAULT 0,
     INDEX idx_wechat_order (article_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS etf_fund_rankings (
+    ranking_date DATE NOT NULL,
+    fund_code CHAR(6) NOT NULL,
+    fund_name VARCHAR(255) NOT NULL,
+    fund_expansion_abbr VARCHAR(255) NOT NULL DEFAULT '',
+    etf_type VARCHAR(32) NOT NULL DEFAULT '',
+    amount_rank SMALLINT UNSIGNED NOT NULL,
+    closing_price DECIMAL(16,4) NOT NULL,
+    total_shares BIGINT UNSIGNED NOT NULL,
+    estimated_total_amount DECIMAL(28,2) NOT NULL,
+    source_url TEXT NOT NULL,
+    fetched_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (ranking_date, fund_code),
+    UNIQUE KEY uk_etf_ranking_date_rank (ranking_date, amount_rank)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS etf_share_snapshots (
+    trade_date DATE NOT NULL,
+    fund_code CHAR(6) NOT NULL,
+    fund_name VARCHAR(255) NOT NULL,
+    fund_expansion_abbr VARCHAR(255) NOT NULL DEFAULT '',
+    etf_type VARCHAR(32) NOT NULL DEFAULT '',
+    total_shares BIGINT UNSIGNED NOT NULL,
+    total_shares_10k DECIMAL(24,2) NOT NULL,
+    source_url TEXT NOT NULL,
+    fetched_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (trade_date, fund_code),
+    INDEX idx_etf_snapshot_fund_date (fund_code, trade_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 """
 
 
