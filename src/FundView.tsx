@@ -117,6 +117,9 @@ function TrendChart({
         top: 3,
         left: 8,
         right: 8,
+        selected: Object.fromEntries(
+          comparisonSeries.map((series) => [series.name, false]),
+        ),
         itemWidth: 18,
         itemHeight: 3,
         textStyle: {color: "#526172", fontSize: 11},
