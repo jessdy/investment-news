@@ -111,6 +111,7 @@ AkShare 采集的精确跟踪标的写入 `etf_index_snapshots`，基金与指�
 python3 scripts/fetch_etf_shares.py --dry-run
 python3 scripts/fetch_etf_shares.py
 python3 scripts/fetch_etf_shares.py --backfill-before 2026-07-13 --days 30
+python3 scripts/fetch_etf_shares.py --start-date 2026-01-01 --end-date 2026-04-14
 python3 scripts/fetch_etf_indices.py --dry-run
 python3 scripts/fetch_etf_indices.py
 ```
@@ -140,6 +141,30 @@ LLM_MODEL="deepseek-chat"
 ```
 
 `.env` 已被 Git 忽略；`llm.config.json` 只保存环境变量映射，不再保存密钥。
+
+## 微信扫码登录
+
+登录使用已认证服务号的 `snsapi_userinfo` 网页授权能力，并通过一次性票据把手机端
+授权结果安全传回 PC。用户表、二维码票据和登录会话分别保存在
+`auth_wechat_users`、`auth_login_tickets`、`auth_sessions`。
+
+1. 在公众号后台「设置与开发 → 账号设置 → 功能设置」中，将网页授权域名设置为
+   `stock.dreamyshare.com`（不填写协议和路径）。
+2. 在部署服务器的 `.env` 中配置：
+
+```bash
+PUBLIC_BASE_URL="https://stock.dreamyshare.com"
+WECHAT_APP_ID="公众号 AppID"
+WECHAT_APP_SECRET="重置后生成的新 AppSecret"
+AUTH_TICKET_TTL="300"
+AUTH_SESSION_TTL="2592000"
+```
+
+3. 重启服务。微信回调地址由后端自动生成为
+   `https://stock.dreamyshare.com/api/auth/wechat/callback`。
+
+`WECHAT_APP_SECRET` 仅供后端换取授权凭证，不得写入前端、镜像或 Git。生产环境
+必须使用 HTTPS；登录 Cookie 使用 `HttpOnly`、`Secure` 和 `SameSite=Lax`。
 
 ## 🐳 Docker 运行
 

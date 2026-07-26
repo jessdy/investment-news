@@ -360,6 +360,32 @@ def collect_backfill(funds, before_date, days):
     return selected
 
 
+def collect_date_range(funds, start_date, end_date):
+    start = datetime.strptime(start_date, "%Y-%m-%d").date()
+    end = datetime.strptime(end_date, "%Y-%m-%d").date()
+    if start > end:
+        raise ValueError("开始日期不能晚于结束日期")
+    candidates = []
+    current = start
+    while current <= end:
+        candidates.append(current.isoformat())
+        current += timedelta(days=1)
+    snapshots = []
+    for offset in range(0, len(candidates), 14):
+        batch_dates = candidates[offset:offset + 14]
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            batches = list(executor.map(
+                lambda date: fetch_backfill_date(date, funds),
+                batch_dates,
+            ))
+        for batch in batches:
+            snapshots.extend(batch)
+    snapshots.sort(key=lambda row: (row["trade_date"], row["fund_code"]))
+    if not snapshots:
+        raise RuntimeError("%s 至 %s 没有份额数据" % (start_date, end_date))
+    return snapshots
+
+
 def create_schema(cursor):
     cursor.execute("SHOW TABLES LIKE 'etf_share_snapshots'")
     if cursor.fetchone():
@@ -510,11 +536,50 @@ def main():
         default=30,
         help="补录交易日数量，默认 30",
     )
+    parser.add_argument(
+        "--start-date",
+        default="",
+        help="按日期区间补录的开始日期（YYYY-MM-DD，含该日）",
+    )
+    parser.add_argument(
+        "--end-date",
+        default="",
+        help="按日期区间补录的结束日期（YYYY-MM-DD，含该日）",
+    )
     args = parser.parse_args()
     if args.top < 1 or args.top > 100:
         parser.error("--top 必须在 1 到 100 之间")
     if args.days < 1 or args.days > 250:
         parser.error("--days 必须在 1 到 250 之间")
+    if bool(args.start_date) != bool(args.end_date):
+        parser.error("--start-date 和 --end-date 必须同时提供")
+    if args.backfill_before and args.start_date:
+        parser.error("--backfill-before 不能与日期区间同时使用")
+    if args.start_date:
+        try:
+            datetime.strptime(args.start_date, "%Y-%m-%d")
+            datetime.strptime(args.end_date, "%Y-%m-%d")
+        except ValueError:
+            parser.error("日期区间必须为 YYYY-MM-DD")
+        funds = load_latest_ranked_funds()
+        try:
+            snapshots = collect_date_range(
+                funds,
+                args.start_date,
+                args.end_date,
+            )
+        except ValueError as error:
+            parser.error(str(error))
+        if args.dry_run:
+            print(json.dumps(snapshots, ensure_ascii=False, indent=2))
+            return
+        save_snapshots(snapshots)
+        dates = sorted({row["trade_date"] for row in snapshots})
+        print(
+            "ETF 历史份额区间补录完成：%s 至 %s，%d 个交易日，%d 条"
+            % (dates[0], dates[-1], len(dates), len(snapshots))
+        )
+        return
     if args.backfill_before:
         try:
             datetime.strptime(args.backfill_before, "%Y-%m-%d")

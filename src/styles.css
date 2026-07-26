@@ -237,6 +237,14 @@ a {
   place-items: center;
 }
 
+.login-avatar {
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .workspace {
   display: flex;
   overflow: hidden;
@@ -1181,6 +1189,12 @@ a.news-title:hover {
   place-items: center;
 }
 
+.login-qr-inner svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .scan-status {
   display: flex;
   align-items: center;
@@ -1188,6 +1202,10 @@ a.news-title:hover {
   color: var(--text-2);
   font-size: 11px;
   gap: 6px;
+}
+
+.scan-status.error {
+  color: var(--red);
 }
 
 .scan-status .pulse {
@@ -1205,6 +1223,26 @@ a.news-title:hover {
   color: var(--text-3);
   font-size: 10px;
   line-height: 1.65;
+}
+
+.logged-in-panel {
+  padding: 12px 0 8px;
+}
+
+.logged-in-panel > img {
+  display: block;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 14px;
+  border: 3px solid var(--gold-soft);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.logged-in-panel > p {
+  margin: 0 0 22px;
+  color: var(--text-3);
+  font-size: 11px;
 }
 
 .state-page {

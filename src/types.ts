@@ -67,6 +67,23 @@ export interface RefreshStatus {
   funds_error?: string;
 }
 
+export interface AuthUser {
+  id: number;
+  nickname: string;
+  avatar_url: string;
+}
+
+export interface WechatLoginTicket {
+  ticket: string;
+  authorize_url: string;
+  expires_in: number;
+}
+
+export interface WechatLoginStatus {
+  status: "pending" | "authorized" | "expired";
+  user?: AuthUser;
+}
+
 export interface EtfTrendPoint {
   date: string;
   total_shares: string | null;

@@ -35,5 +35,5 @@ fi
 
 echo "正在启动生财佑道后端：http://${HOST}:${PORT}/news"
 echo "页面：/news · /analysis · /funds · /sitemap.xml"
-echo "接口：/api/news · /api/wechat-articles · /api/etf-shares · /api/refresh-status"
+echo "接口：/api/news · /api/wechat-articles · /api/etf-shares · /api/auth/* · /api/refresh-status"
 exec env HOST="$HOST" PORT="$PORT" "$PYTHON" server.py

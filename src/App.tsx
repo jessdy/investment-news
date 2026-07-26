@@ -7,16 +7,26 @@ import {
   Modal,
   Spinner,
 } from "@heroui/react";
+import {QRCodeSVG} from "qrcode.react";
 import {lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
 
-import {fetchDashboard, fetchRefreshStatus} from "./api";
+import {
+  createWechatLoginTicket,
+  fetchCurrentUser,
+  fetchDashboard,
+  fetchRefreshStatus,
+  logoutWechat,
+  pollWechatLogin,
+} from "./api";
 import qrCode from "../docs/shengcai-youdao-qr.jpg";
 import type {
+  AuthUser,
   Industry,
   NewsData,
   WechatArticle,
   WechatContent,
+  WechatLoginTicket,
 } from "./types";
 
 type View = "news" | "analysis" | "funds";
@@ -100,39 +110,167 @@ function useRouteSeo(view: View) {
 }
 
 function LoginModal() {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [ticket, setTicket] = useState<WechatLoginTicket | null>(null);
+  const [status, setStatus] = useState("打开微信扫一扫，完成授权登录");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const modalOpenRef = useRef(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchCurrentUser(controller.signal)
+      .then(setUser)
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+
+  const startLogin = useCallback(async () => {
+    if (user || loading) return;
+    setLoading(true);
+    setError("");
+    setStatus("正在生成安全登录二维码…");
+    try {
+      const result = await createWechatLoginTicket();
+      if (!modalOpenRef.current) return;
+      setTicket(result);
+      setStatus("二维码有效期 5 分钟，请使用微信扫码");
+    } catch (loginError) {
+      setTicket(null);
+      setError(loginError instanceof Error ? loginError.message : "无法生成登录二维码");
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, user]);
+
+  useEffect(() => {
+    if (!ticket) return;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const poll = async () => {
+      try {
+        const result = await pollWechatLogin(ticket.ticket, controller.signal);
+        if (result.status === "authorized" && result.user) {
+          setUser(result.user);
+          setTicket(null);
+          setStatus("登录成功");
+          return;
+        }
+        if (result.status === "expired") {
+          setTicket(null);
+          setError("二维码已过期，请重新生成");
+          return;
+        }
+        timer = setTimeout(poll, 1800);
+      } catch (pollError) {
+        if (!controller.signal.aborted) {
+          setError(pollError instanceof Error ? pollError.message : "登录状态查询失败");
+          timer = setTimeout(poll, 3000);
+        }
+      }
+    };
+    timer = setTimeout(poll, 1200);
+    return () => {
+      controller.abort();
+      if (timer) clearTimeout(timer);
+    };
+  }, [ticket]);
+
+  const logout = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      await logoutWechat();
+      setUser(null);
+      setTicket(null);
+      setStatus("打开微信扫一扫，完成授权登录");
+    } catch (logoutError) {
+      setError(logoutError instanceof Error ? logoutError.message : "退出登录失败");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return (
-    <Modal>
+    <Modal
+      onOpenChange={(isOpen) => {
+        modalOpenRef.current = isOpen;
+        if (isOpen) {
+          void startLogin();
+        } else if (!user) {
+          setTicket(null);
+          setError("");
+          setStatus("打开微信扫一扫，完成授权登录");
+        }
+      }}
+    >
       <Modal.Trigger>
         <Button className="login-btn" variant="ghost">
-          <span className="avatar-dot">微</span>
-          <span className="login-label">微信登录</span>
+          {user?.avatar_url ? (
+            <img className="login-avatar" src={user.avatar_url} alt="" referrerPolicy="no-referrer" />
+          ) : (
+            <span className="avatar-dot">微</span>
+          )}
+          <span className="login-label">{user?.nickname || "微信登录"}</span>
         </Button>
       </Modal.Trigger>
       <Modal.Backdrop className="login-backdrop">
         <Modal.Container placement="center" size="sm">
           <Modal.Dialog className="login-card">
             <Modal.Header className="login-top">
-              <Modal.Heading id="loginTitle">微信扫码登录</Modal.Heading>
+              <Modal.Heading id="loginTitle">
+                {user ? "微信账号" : "微信扫码登录"}
+              </Modal.Heading>
               <Modal.CloseTrigger className="close-btn" aria-label="关闭" />
             </Modal.Header>
             <Modal.Body className="wechat-login-body">
-              <div className="wechat-icon">微信</div>
-              <h3>使用微信扫码登录</h3>
-              <p>打开微信，使用“扫一扫”完成安全登录</p>
-              <div className="login-qr">
-                <div className="login-qr-inner">
-                  登录二维码
-                  <br />
-                  等待接入微信开放平台
+              {user ? (
+                <div className="logged-in-panel">
+                  {user.avatar_url ? (
+                    <img src={user.avatar_url} alt={`${user.nickname}头像`} referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="wechat-icon">微信</div>
+                  )}
+                  <h3>{user.nickname}</h3>
+                  <p>已通过“生财佑道”服务号安全登录</p>
+                  <Button variant="outline" isPending={loading} onPress={() => void logout()}>
+                    退出登录
+                  </Button>
                 </div>
-              </div>
-              <div className="scan-status">
-                <span className="pulse" />
-                <span>登录服务尚未配置</span>
-              </div>
-              <div className="login-note">
-                需要配置微信开放平台 AppID、授权回调域名及服务端会话接口后，系统才会生成真实登录二维码。
-              </div>
+              ) : (
+                <>
+                  <div className="wechat-icon">微信</div>
+                  <h3>使用微信扫码登录</h3>
+                  <p>打开微信，使用“扫一扫”完成安全登录</p>
+                  <div className="login-qr">
+                    <div className="login-qr-inner">
+                      {ticket ? (
+                        <QRCodeSVG
+                          value={ticket.authorize_url}
+                          size={156}
+                          bgColor="#ffffff"
+                          fgColor="#0b1f33"
+                          level="M"
+                          title="微信登录二维码"
+                        />
+                      ) : loading ? (
+                        <Spinner size="lg" color="accent" />
+                      ) : (
+                        <Button size="sm" onPress={() => void startLogin()}>
+                          重新生成二维码
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className={`scan-status ${error ? "error" : ""}`}>
+                    {!error && <span className="pulse" />}
+                    <span>{error || status}</span>
+                  </div>
+                  <div className="login-note">
+                    登录即表示同意使用微信昵称和头像创建本站账号。二维码和授权票据均为一次性使用。
+                  </div>
+                </>
+              )}
             </Modal.Body>
           </Modal.Dialog>
         </Modal.Container>

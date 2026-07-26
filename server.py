@@ -8,11 +8,23 @@
 """
 import os, sys, json, shutil, subprocess, threading, re
 from datetime import datetime
+from http.cookies import SimpleCookie
 from html import escape
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
-from database import read_etf_share_data, read_news_data, read_wechat_content
+from auth import (
+    SESSION_TTL_SECONDS,
+    authorize_callback,
+    create_login_ticket,
+    current_user,
+    delete_session,
+    init_auth_schema,
+    poll_login_ticket,
+)
+from database import load_dotenv, read_etf_share_data, read_news_data, read_wechat_content
+
+load_dotenv()
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOST = os.environ.get("HOST", "127.0.0.1")
@@ -169,10 +181,54 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
-    def _json(self, payload, code=200):
+    def _json(self, payload, code=200, headers=None):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        for name, value in (headers or {}).items():
+            self.send_header(name, value)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _session_token(self):
+        cookie = SimpleCookie()
+        cookie.load(self.headers.get("Cookie", ""))
+        morsel = cookie.get("session")
+        return morsel.value if morsel else ""
+
+    def _session_cookie(self, token, max_age):
+        parts = [
+            "session=%s" % token,
+            "Path=/",
+            "Max-Age=%d" % max_age,
+            "HttpOnly",
+            "SameSite=Lax",
+        ]
+        if self._public_base_url().startswith("https://"):
+            parts.append("Secure")
+        return "; ".join(parts)
+
+    def _auth_result_page(self, title, message, ok=True):
+        color = "#2f7d5b" if ok else "#b5473c"
+        body = """<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{title}</title></head>
+<body style="margin:0;background:#f4f6f8;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">
+<main style="max-width:420px;margin:18vh auto;padding:36px 28px;background:#fff;border-radius:12px;text-align:center;box-shadow:0 10px 40px rgba(11,31,51,.1)">
+<div style="width:52px;height:52px;margin:0 auto 18px;border-radius:50%;color:#fff;background:{color};font-size:26px;line-height:52px">{mark}</div>
+<h1 style="margin:0 0 12px;color:#0b1f33;font-size:22px">{title}</h1>
+<p style="margin:0;color:#526172;line-height:1.7">{message}</p>
+</main></body></html>""".format(
+            title=escape(title),
+            message=escape(message),
+            color=color,
+            mark="✓" if ok else "!",
+        ).encode("utf-8")
+        self.send_response(200 if ok else 400)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -378,7 +434,25 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(payload)
 
     def do_POST(self):
-        if self.path.startswith("/api/refresh"):
+        path = urlsplit(self.path).path
+        if path == "/api/auth/wechat/ticket":
+            try:
+                return self._json(create_login_ticket(self._public_base_url()), 201)
+            except RuntimeError as error:
+                return self._json({"ok": False, "error": str(error)}, 503)
+            except Exception as error:
+                print("创建微信登录二维码失败:", error)
+                return self._json({"ok": False, "error": "暂时无法生成登录二维码"}, 503)
+        if path == "/api/auth/logout":
+            try:
+                delete_session(self._session_token())
+            except Exception as error:
+                print("退出微信登录失败:", error)
+            return self._json(
+                {"ok": True},
+                headers={"Set-Cookie": self._session_cookie("", 0)},
+            )
+        if path.startswith("/api/refresh"):
             return self._json({"ok": False, "error": "已关闭手动刷新，系统每 6 小时自动更新"}, 405)
         self.send_error(404)
 
@@ -421,6 +495,49 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._json({"ok": False, "error": "ETF 份额数据暂时不可用"}, 503)
         if path == "/api/refresh-status":
             return self._json(dict(REFRESH_STATE, interval_hours=6))
+        if path == "/api/auth/wechat/callback":
+            try:
+                authorize_callback(
+                    (query.get("ticket") or [""])[0],
+                    (query.get("state") or [""])[0],
+                    (query.get("code") or [""])[0],
+                )
+                return self._auth_result_page(
+                    "登录确认成功",
+                    "电脑端正在自动完成登录，现在可以关闭此页面。",
+                )
+            except Exception as error:
+                print("微信授权回调失败:", error)
+                return self._auth_result_page(
+                    "登录确认失败",
+                    str(error),
+                    ok=False,
+                )
+        if path == "/api/auth/wechat/status":
+            try:
+                result = poll_login_ticket((query.get("ticket") or [""])[0])
+                token = result.pop("session_token", "")
+                headers = {}
+                if token:
+                    headers["Set-Cookie"] = self._session_cookie(
+                        token,
+                        result.pop("session_expires_in", SESSION_TTL_SECONDS),
+                    )
+                return self._json(result, headers=headers)
+            except ValueError as error:
+                return self._json({"ok": False, "error": str(error)}, 400)
+            except Exception as error:
+                print("查询微信登录状态失败:", error)
+                return self._json({"ok": False, "error": "登录状态查询失败"}, 503)
+        if path == "/api/auth/me":
+            try:
+                user = current_user(self._session_token())
+                if not user:
+                    return self._json({"authenticated": False}, 401)
+                return self._json({"authenticated": True, "user": user})
+            except Exception as error:
+                print("读取登录用户失败:", error)
+                return self._json({"ok": False, "error": "登录状态暂时不可用"}, 503)
         if path == "/data.js" and DATA_FILE != DEFAULT_DATA_FILE:
             return self._data_js()
         return super().do_GET()
@@ -428,6 +545,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     ensure_data_file()
+    init_auth_schema()
     if not os.path.exists(os.path.join(STATIC_DIR, "index.html")):
         raise SystemExit("未找到前端构建产物，请先运行 npm install && npm run build")
     display_host = "localhost" if HOST in ("0.0.0.0", "127.0.0.1") else HOST
