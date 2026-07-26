@@ -97,6 +97,15 @@ export interface EtfFundItem {
   history: EtfTrendPoint[];
 }
 
+export interface EtfComparisonIndex {
+  code: string;
+  name: string;
+  history: Array<{
+    date: string;
+    close: string | null;
+  }>;
+}
+
 export interface EtfDashboard {
   latest_date: string;
   range: {
@@ -105,5 +114,6 @@ export interface EtfDashboard {
     trading_days: number;
     max_trading_days: number;
   };
+  comparison_indices: EtfComparisonIndex[];
   items: EtfFundItem[];
 }

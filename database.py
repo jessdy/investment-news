@@ -203,6 +203,7 @@ def read_etf_share_data(start_date=None, end_date=None, default_days=30, max_day
                 return {
                     "latest_date": "",
                     "range": {"start_date": "", "end_date": "", "trading_days": 0},
+                    "comparison_indices": [],
                     "items": [],
                 }
             effective_end = requested_end or latest_date
@@ -246,6 +247,7 @@ def read_etf_share_data(start_date=None, end_date=None, default_days=30, max_day
                 return {
                     "latest_date": latest_date.isoformat(),
                     "range": {"start_date": "", "end_date": "", "trading_days": 0},
+                    "comparison_indices": [],
                     "items": [],
                 }
             effective_start, effective_end = trading_dates[0], trading_dates[-1]
@@ -276,6 +278,7 @@ def read_etf_share_data(start_date=None, end_date=None, default_days=30, max_day
                         "end_date": effective_end.isoformat(),
                         "trading_days": len(trading_dates),
                     },
+                    "comparison_indices": [],
                     "items": [],
                 }
             placeholders = ",".join(["%s"] * len(fund_codes))
@@ -290,8 +293,19 @@ def read_etf_share_data(start_date=None, end_date=None, default_days=30, max_day
                 fund_codes + [effective_start, effective_end],
             )
             history_rows = cursor.fetchall()
+            cursor.execute(
+                """
+                SELECT benchmark_code, benchmark_name
+                FROM etf_comparison_indices
+                WHERE enabled = 1
+                ORDER BY sort_order
+                """
+            )
+            comparison_indices = cursor.fetchall()
             benchmark_codes = sorted({
                 row["benchmark_code"] for row in items if row["benchmark_code"]
+            } | {
+                row["benchmark_code"] for row in comparison_indices
             })
             index_rows = []
             if benchmark_codes:
@@ -314,6 +328,21 @@ def read_etf_share_data(start_date=None, end_date=None, default_days=30, max_day
     index_by_code = {}
     for row in index_rows:
         index_by_code.setdefault(row["benchmark_code"], {})[row["trade_date"]] = row
+
+    result_comparisons = []
+    for comparison in comparison_indices:
+        values = index_by_code.get(comparison["benchmark_code"], {})
+        result_comparisons.append({
+            "code": comparison["benchmark_code"],
+            "name": comparison["benchmark_name"],
+            "history": [{
+                "date": trade_date.isoformat(),
+                "close": (
+                    str(values[trade_date]["close_value"])
+                    if trade_date in values else None
+                ),
+            } for trade_date in trading_dates],
+        })
 
     result_items = []
     for row in items:
@@ -357,5 +386,6 @@ def read_etf_share_data(start_date=None, end_date=None, default_days=30, max_day
             "trading_days": len(trading_dates),
             "max_trading_days": max_days,
         },
+        "comparison_indices": result_comparisons,
         "items": result_items,
     }

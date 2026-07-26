@@ -46,6 +46,19 @@ CREATE TABLE IF NOT EXISTS etf_index_snapshots (
         ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (benchmark_code, trade_date),
     INDEX idx_etf_index_date (trade_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS etf_comparison_indices (
+    benchmark_code VARCHAR(32) NOT NULL,
+    benchmark_name VARCHAR(255) NOT NULL,
+    adapter VARCHAR(32) NOT NULL,
+    symbol VARCHAR(64) NOT NULL,
+    sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    enabled TINYINT(1) NOT NULL DEFAULT 1,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (benchmark_code),
+    UNIQUE KEY uk_etf_comparison_order (sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 """
 
@@ -72,6 +85,15 @@ DEFAULT_MAPPINGS = [
         0,
         "AkShare 暂无该精确指数接口，未使用近似指数替代",
     ),
+]
+
+COMPARISON_INDICES = [
+    ("000300", "沪深300", "csindex", "000300", 1),
+    ("399006", "创业板指", "sz_index", "sz399006", 2),
+    ("000680", "科创综指", "csindex", "000680", 3),
+    ("399673", "创业板50", "sz_index", "sz399673", 4),
+    ("930050", "中证A50", "csindex", "930050", 5),
+    ("000903", "中证A100", "csindex", "000903", 6),
 ]
 
 
@@ -111,18 +133,41 @@ def seed_mappings(cursor):
           AND m.fund_code IS NULL
         """
     )
+    cursor.executemany(
+        """
+        INSERT INTO etf_comparison_indices
+            (benchmark_code, benchmark_name, adapter, symbol, sort_order)
+        VALUES (%s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE
+            benchmark_name = VALUES(benchmark_name),
+            adapter = VALUES(adapter),
+            symbol = VALUES(symbol),
+            sort_order = VALUES(sort_order),
+            enabled = 1
+        """,
+        COMPARISON_INDICES,
+    )
 
 
 def latest_active_mappings(cursor):
     cursor.execute(
         """
-        SELECT DISTINCT m.benchmark_code, m.benchmark_name, m.adapter, m.symbol
-        FROM etf_benchmark_mappings m
-        JOIN etf_fund_rankings r ON r.fund_code = m.fund_code
-        WHERE r.ranking_date = (SELECT MAX(ranking_date) FROM etf_fund_rankings)
-          AND m.is_supported = 1
-          AND m.benchmark_code <> ''
-        ORDER BY m.benchmark_code
+        SELECT benchmark_code, MAX(benchmark_name) AS benchmark_name,
+               MAX(adapter) AS adapter, MAX(symbol) AS symbol
+        FROM (
+            SELECT m.benchmark_code, m.benchmark_name, m.adapter, m.symbol
+            FROM etf_benchmark_mappings m
+            JOIN etf_fund_rankings r ON r.fund_code = m.fund_code
+            WHERE r.ranking_date = (SELECT MAX(ranking_date) FROM etf_fund_rankings)
+              AND m.is_supported = 1
+              AND m.benchmark_code <> ''
+            UNION ALL
+            SELECT benchmark_code, benchmark_name, adapter, symbol
+            FROM etf_comparison_indices
+            WHERE enabled = 1
+        ) active_indices
+        GROUP BY benchmark_code
+        ORDER BY benchmark_code
         """
     )
     return cursor.fetchall()
@@ -164,12 +209,41 @@ def fetch_sge(symbol, start_date, end_date):
     return rows
 
 
+def fetch_sz_index(symbol, start_date, end_date):
+    try:
+        frame = ak.stock_zh_index_daily_em(
+            symbol=symbol,
+            start_date=start_date.strftime("%Y%m%d"),
+            end_date=end_date.strftime("%Y%m%d"),
+        )
+    except Exception:
+        # 东方财富偶发断连时使用 AkShare 的新浪指数日线接口。
+        frame = ak.stock_zh_index_daily(symbol=symbol)
+    rows = []
+    for _, item in frame.iterrows():
+        close = clean_number(item.get("close"))
+        raw_date = item.get("date")
+        if close is None or not raw_date:
+            continue
+        trade_date = (
+            raw_date
+            if isinstance(raw_date, date)
+            else date.fromisoformat(str(raw_date)[:10])
+        )
+        if not (start_date <= trade_date <= end_date):
+            continue
+        rows.append((trade_date, close))
+    return rows
+
+
 def fetch_mapping(mapping, start_date, end_date):
     adapter = mapping["adapter"]
     if adapter == "csindex":
         return fetch_csindex(mapping["symbol"], start_date, end_date)
     if adapter == "sge":
         return fetch_sge(mapping["symbol"], start_date, end_date)
+    if adapter == "sz_index":
+        return fetch_sz_index(mapping["symbol"], start_date, end_date)
     raise ValueError("不支持的 AkShare 适配器：%s" % adapter)
 
 

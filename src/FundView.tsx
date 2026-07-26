@@ -11,7 +11,7 @@ import {CanvasRenderer} from "echarts/renderers";
 import {useEffect, useMemo, useRef, useState} from "react";
 
 import {fetchEtfDashboard} from "./api";
-import type {EtfDashboard, EtfFundItem} from "./types";
+import type {EtfComparisonIndex, EtfDashboard, EtfFundItem} from "./types";
 
 use([
   LineChart,
@@ -54,7 +54,15 @@ function normalize(values: Array<number | null>) {
   return values.map((value) => (value === null ? null : (value / base) * 100));
 }
 
-function TrendChart({fund, mode}: {fund: EtfFundItem; mode: ChartMode}) {
+function TrendChart({
+  fund,
+  comparisons,
+  mode,
+}: {
+  fund: EtfFundItem;
+  comparisons: EtfComparisonIndex[];
+  mode: ChartMode;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<EChartsType | null>(null);
 
@@ -66,16 +74,49 @@ function TrendChart({fund, mode}: {fund: EtfFundItem; mode: ChartMode}) {
     );
     const normalized = mode === "normalized";
     const shareSeries = normalized ? normalize(shares) : shares;
-    const indexSeries = normalized ? normalize(indexValues) : indexValues;
     const rawByDate = new Map(fund.history.map((point) => [point.date.slice(5), point]));
+    const benchmarkName = `跟踪标的 · ${fund.benchmark.name || "暂不可用"}`;
+    const indexSeries = normalized ? normalize(indexValues) : indexValues;
+    const comparisonSeries = comparisons
+      .filter((comparison) => comparison.code !== fund.benchmark.code)
+      .map((comparison) => {
+        const rawValues = comparison.history.map((point) =>
+          point.close === null ? null : Number(point.close),
+        );
+        return {
+          name: comparison.name,
+          rawValues,
+          data: normalized ? normalize(rawValues) : rawValues,
+        };
+      });
+    const rawIndexSeries = [
+      ...(fund.benchmark.supported
+        ? [{name: benchmarkName, values: indexValues}]
+        : []),
+      ...comparisonSeries.map((series) => ({
+        name: series.name,
+        values: series.rawValues,
+      })),
+    ];
 
     return {
       animationDuration: 450,
-      color: ["#bb8b3d", "#2f6f91"],
-      grid: {top: 50, right: normalized ? 28 : 68, bottom: 58, left: 62},
+      color: [
+        "#bb8b3d",
+        "#153f5f",
+        "#3f7f9e",
+        "#a34f45",
+        "#5f7d4e",
+        "#775f91",
+        "#c07937",
+        "#4f7774",
+      ],
+      grid: {top: 76, right: normalized ? 28 : 68, bottom: 58, left: 62},
       legend: {
-        top: 4,
-        right: 4,
+        type: "scroll",
+        top: 3,
+        left: 8,
+        right: 8,
         itemWidth: 18,
         itemHeight: 3,
         textStyle: {color: "#526172", fontSize: 11},
@@ -90,19 +131,27 @@ function TrendChart({fund, mode}: {fund: EtfFundItem; mode: ChartMode}) {
             axisValue: string;
             color: string;
             seriesName: string;
+            dataIndex: number;
           }>;
           const dateLabel = entries[0]?.axisValue ?? "";
+          const dataIndex = entries[0]?.dataIndex ?? 0;
           const raw = rawByDate.get(dateLabel);
           const sharesText = raw?.total_shares
             ? `${compactNumber(Number(raw.total_shares) / 100_000_000)} 亿份`
             : "暂无数据";
-          const indexText = raw?.index_close
-            ? compactNumber(Number(raw.index_close))
-            : "暂无数据";
           return [
             `<strong>${fund.history.find((point) => point.date.slice(5) === dateLabel)?.date ?? dateLabel}</strong>`,
             `<span style="color:#d8b36a">●</span> 基金份额：${sharesText}`,
-            `<span style="color:#65a6c8">●</span> ${fund.benchmark.name || "跟踪指数"}：${indexText}`,
+            ...rawIndexSeries.map((series, index) => {
+              const value = series.values[dataIndex];
+              const color = [
+                "#153f5f", "#3f7f9e", "#a34f45", "#5f7d4e",
+                "#775f91", "#c07937", "#4f7774",
+              ][index % 7];
+              return `<span style="color:${color}">●</span> ${series.name}：${
+                value === null ? "暂无数据" : compactNumber(value)
+              }`;
+            }),
           ].join("<br/>");
         },
       },
@@ -155,19 +204,31 @@ function TrendChart({fund, mode}: {fund: EtfFundItem; mode: ChartMode}) {
           areaStyle: {color: "rgba(187,139,61,.08)"},
           emphasis: {focus: "series"},
         },
-        {
-          name: fund.benchmark.name || "跟踪指数",
+        ...(fund.benchmark.supported
+          ? [{
+              name: benchmarkName,
+              type: "line",
+              yAxisIndex: normalized ? 0 : 1,
+              data: indexSeries,
+              connectNulls: false,
+              showSymbol: false,
+              lineStyle: {width: 2.4},
+              emphasis: {focus: "series"},
+            }]
+          : []),
+        ...comparisonSeries.map((series) => ({
+          name: series.name,
           type: "line",
           yAxisIndex: normalized ? 0 : 1,
-          data: indexSeries,
+          data: series.data,
           connectNulls: false,
           showSymbol: false,
-          lineStyle: {width: 2},
+          lineStyle: {width: 1.5, opacity: 0.86},
           emphasis: {focus: "series"},
-        },
+        })),
       ],
     };
-  }, [fund, mode]);
+  }, [comparisons, fund, mode]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -382,14 +443,25 @@ export default function FundView({onDataDate}: FundViewProps) {
             <div><span>数据覆盖</span><strong>{selectedFund.history.length - trendStats.missing}/{selectedFund.history.length}</strong><small>交易日</small></div>
           </div>
 
-          {selectedFund.benchmark.supported ? (
-            <TrendChart fund={selectedFund} mode={mode} />
-          ) : (
-            <div className="fund-chart-unavailable">
-              <strong>跟踪指数暂不可用</strong>
-              <p>{selectedFund.benchmark.note || "AkShare 暂无该精确指数数据。"}</p>
-            </div>
+          <div className="fund-comparison-strip">
+            <span>公共对比指数</span>
+            {dashboard.comparison_indices.map((index) => (
+              <Chip size="sm" variant="soft" key={index.code}>
+                {index.name}
+              </Chip>
+            ))}
+          </div>
+          {!selectedFund.benchmark.supported && (
+            <p className="fund-benchmark-warning">
+              该基金跟踪标的暂不可用，仅展示基金份额与公共对比指数。
+              {selectedFund.benchmark.note && ` ${selectedFund.benchmark.note}`}
+            </p>
           )}
+          <TrendChart
+            fund={selectedFund}
+            comparisons={dashboard.comparison_indices}
+            mode={mode}
+          />
           {trendStats.missing > 0 && (
             <p className="fund-gap-note">
               份额缺失的 {trendStats.missing} 个交易日保留为空白断点，不以 0 代替。

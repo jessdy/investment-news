@@ -1899,9 +1899,43 @@ a.news-title:hover {
   color: #277454;
 }
 
+.fund-comparison-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 12px 18px 0;
+  gap: 6px;
+}
+
+.fund-comparison-strip > span {
+  margin-right: 3px;
+  color: var(--text-3);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.fund-comparison-strip [data-slot="base"],
+.fund-comparison-strip > div {
+  height: 23px;
+  color: var(--text-2);
+  background: #edf2f5;
+  font-size: 9px;
+}
+
+.fund-benchmark-warning {
+  margin: 10px 18px 0;
+  padding: 8px 10px;
+  border-left: 2px solid var(--gold);
+  color: var(--text-2);
+  background: var(--gold-soft);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
 .fund-chart {
   width: 100%;
-  height: 410px;
+  height: 440px;
   margin-top: 6px;
 }
 

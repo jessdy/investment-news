@@ -44,7 +44,7 @@
 | **自⁠动⁠刷⁠新** | 服务启动后自动抓取与摘要，此后每 6 小时后台更新，无需手动操作 |
 | **引⁠擎⁠双⁠选** | 支持本机 Claude 订阅（`claude-cli`，$0）与任意 OpenAI 兼容 API 两种接入，单一配置项切换 |
 | **MySQL 数据源** | 新闻与公众号文章统一存入 MySQL，前端通过 Python 后端 API 实时读取 |
-| **ETF 规模趋势** | 展示上交所规模前十 ETF、每日份额变化，并通过 AkShare 同步对比各自精确跟踪指数 |
+| **ETF 规模趋势** | 展示上交所规模前十 ETF、每日份额变化，并通过 AkShare 同步对比各自跟踪标的及六个公共市场指数 |
 | **合⁠规⁠过⁠滤** | 内置关键词过滤，自动剔除博彩、预测市场、加密货币、色情类内容；时政、财经正常收录 |
 
 ## 📸 截图 Screenshot
@@ -97,8 +97,9 @@ sources.json  (108 个源 / 12 赛道)
 `TOT_VOL`（总份额）估算场内总金额，选出金额最大的 10 只 ETF。
 金额排名写入 `etf_fund_rankings`，逐日总份额写入 `etf_share_snapshots`。
 AkShare 采集的精确跟踪标的写入 `etf_index_snapshots`，基金与指数映射保存在
-`etf_benchmark_mappings`；无法精确获取的指数不会用近似数据替代。重复运行只会
-幂等更新已有记录。
+`etf_benchmark_mappings`；沪深300、创业板指、科创综指、创业板50、中证A50、
+中证A100 六个公共对比指数配置保存在 `etf_comparison_indices`。无法精确获取的
+跟踪标的不会用近似数据替代。重复运行只会幂等更新已有记录。
 
 `GET /api/etf-shares` 默认返回最近 30 个交易日，可使用
 `start_date=YYYY-MM-DD&end_date=YYYY-MM-DD` 自选区间，最多 90 个交易日。
@@ -205,7 +206,7 @@ investment-news/
 ├── scripts/
 │   ├── fetch.py        抓取 + 合规过滤 + 时间窗口(纯标准库)
 │   ├── fetch_etf_shares.py 获取上交所 ETF 总金额前 10 名及最近 10 天份额
-│   ├── fetch_etf_indices.py 使用 AkShare 采集基金精确跟踪指数历史
+│   ├── fetch_etf_indices.py 使用 AkShare 采集跟踪标的与公共对比指数历史
 │   ├── digest.py       调用大模型生成「今日要点」与翻译
 │   ├── import_mysql.py 创建表并将 JS 数据导入 MySQL
 │   ├── llm.py          统一大模型入口(claude-cli / api 双 provider)
